@@ -11,5 +11,5 @@ Use wukong-hadoop to parse all of the json files in a directory using the mapper
 `cat ../mjg_twitter/json/*.json |  bundle exec wu-hadoop --from=json twitter_url_extractor.rb --mode=local`
 
 
-Run all the files from 20131215/json through twitter_url_extractor.rb then sort numerically on the _total_tweets_ field.  
-`cat data/20131215/json/*.json | bundle exec wu-hadoop --from=json twitter_url_extractor.rb --mode=local | wu-local sort --on=total_tweets --numeric`
+Run all the files from 20131215/json through twitter_url_extractor.rb then sort numerically on the _total_tweets_ field.  Write the result to 20131215-linkReport.json
+`cat data/20131215/json/*.json | bundle exec wu-hadoop --from=json lib/twitter_url_extractor.rb --mode=local | wu-local sort --on=total_tweets --numeric --reverse > 20131215-linkReport.json`
