@@ -1,3 +1,4 @@
+require 'json'
 # Returns a report on how many times each URL has been tweeted.
 # Yields JSON containing key, count, retweets and total tweets.  Example:
 #   {"key":"http://nyti.ms/1eaCmuG","count":1,"retweets":95,"total_tweets":96}
@@ -6,6 +7,7 @@ Wukong.processor(:mapper) do
   ACCEPT_SHORTENED_IF_EXPANDED_HAS = [/css/,/CSS/,/svg/, /SVG/]
   REJECT_EXPANDED_IF = [/instagram.com\/p/,/\/photo\//,
     /cSS/,/cSs/,/csS/,/Css/,/CSs/,/CsS/,/sVG/,/sVg/,/svG/,/Svg/,/SVg/,/SvG/]
+  ACCEPT_IF_BODY_HAS = [/(\bcss3|html5|svg\b)+|https?:\/\/(www.)?\w+.\w+\/(-css3|html5|svg-)/i]
   
   def process record
     url_entities = []
@@ -14,20 +16,30 @@ Wukong.processor(:mapper) do
     end
     if validate_record(record)
       url_entities.each do |url_entity|
-        if validate_entity(url_entity) 
-          extracted = {"url" => url_entity["expanded_url"], "retweets"=>record["retweetCount"], "body"=>record["body"], "source_urls"=>url_entity["url"]}
-          yield extracted.to_json
-        end
+        extracted = {"url" => url_entity["expanded_url"], "retweets"=>record["retweetCount"], "body"=>record["body"], "source_urls"=>url_entity["url"]}
+        yield extracted.to_json
       end
     end
   end
   
   def validate_record(record)
+    # result = match_against(record["body"],ACCEPT_IF_BODY_HAS)
+    result = true
     if match_against(record["body"],REJECT_EXPANDED_IF)
-      return false
+      result = false
     else
-      return true
+      record["gnip"]["urls"].each do |url_entity|
+        if result
+          result = validate_entity(url_entity) 
+        end
+      end
+      record["object"]["twitter_entities"]["urls"].each do |url_entity|
+        if result
+          result = validate_entity(url_entity) 
+        end
+      end
     end
+    return result
   end
   
   # returns true if the entity is valid.  Returns false if entity is invalid
