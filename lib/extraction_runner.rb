@@ -13,7 +13,6 @@ class ExtractionRunner
   end
   
   def process
-
     puts "Running extractor against the data in #{source_dir_path}"
     extractor_path = File.join(File.dirname(__FILE__),"twitter_url_extractor.rb")
     original_working_dir = Dir.pwd
@@ -25,7 +24,7 @@ class ExtractionRunner
       #puts "[SKIPPED] processing #{expression_for_files_to_process(date)} to #{destination_path}"
       process_log[:success] << {destination_file_path:destination_path}
     end
-    message = "Finished compiling #{dates_to_process.count} link reports to #{process_log[:success].map{|l| l[:destination_file_path] }} with #{process_log[:failure].count} failures"
+    message = "Finished compiling #{dates_to_process.count} link reports to #{processed_reports} with #{process_log[:failure].count} failures"
     puts message
   end
   
@@ -52,8 +51,11 @@ class ExtractionRunner
   def output_directory
     @output_directory ||= Dir.pwd+"/output"
   end
-  
-  
+
+  def processed_reports
+    process_log[:success].map{|l| l[:destination_file_path] }
+  end
+
   def source_dir_path
     @source_dir_path ||= "data/#{today_string}"
   end
