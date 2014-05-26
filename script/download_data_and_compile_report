@@ -1,0 +1,17 @@
+#!/usr/bin/env ruby
+
+require "./lib/gnip_downloader"
+require "./lib/extraction_runner"
+
+today_string =  "20131215"
+downloader = GnipDownloader.new(skip_download:true)
+downloader.today_string = "20131215"
+# downloader.download_and_unpack
+#start_date = Time.now-1
+#end_date = Time.now
+start_date = DateTime.strptime("20131221", "%Y%m%d")
+end_date = DateTime.strptime("20140108", "%Y%m%d")
+extractor = ExtractionRunner.new(source_dir_path:downloader.output_dir_path, start_date:start_date, end_date:end_date)
+
+puts extractor.process 
+puts extractor.message
