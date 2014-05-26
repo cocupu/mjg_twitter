@@ -8,7 +8,9 @@ Wukong.processor(:mapper) do
   REJECT_EXPANDED_IF = [/instagram.com\/p/,/\/photo\//,
     /cSS/,/cSs/,/csS/,/Css/,/CSs/,/CsS/,/sVG/,/sVg/,/svG/,/Svg/,/SVg/,/SvG/]
   ACCEPT_IF_BODY_HAS = [/(\bcss3|html5|svg\b)+|https?:\/\/(www.)?\w+.\w+\/(-css3|html5|svg-)/i]
-  
+
+  field :invert_filters, String, default:false
+
   def process record
     url_entities = []
     begin
@@ -39,7 +41,11 @@ Wukong.processor(:mapper) do
         end
       end
     end
-    return result
+    if invert_filters
+      return !result
+    else
+      return result
+    end
   end
   
   # returns true if the entity is valid.  Returns false if entity is invalid
@@ -70,6 +76,8 @@ end
 Wukong.processor(:reducer, Wukong::Processor::Accumulator) do
 
   attr_accessor :count, :retweets, :text, :source_urls
+
+  field :include_debug_info, String, default:false
   
   # Group records based on matching url values
   def get_key(record)
@@ -91,8 +99,11 @@ Wukong.processor(:reducer, Wukong::Processor::Accumulator) do
   end
 
   def finalize
-    to_return = {url:key, count:count, retweets:retweets, total_tweets:count+retweets, text:text, source_urls:source_urls}
-    # to_return = {url:key, count:count, retweets:retweets, total_tweets:count+retweets}
+    if  include_debug_info
+      to_return = {url:key, count:count, retweets:retweets, total_tweets:count+retweets, text:text, source_urls:source_urls}
+    else
+      to_return = {url:key, count:count, retweets:retweets, total_tweets:count+retweets}
+    end
     yield JSON.generate(to_return)
   end
 end
