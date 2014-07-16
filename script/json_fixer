@@ -1,0 +1,40 @@
+
+printf '%s' "[" |cat - RejectedWithDebugInfo-linkReport.json | tr '\n' ',' | sed '$s/,$/]/' > RejectedWithDebugInfo-fixed.json
+
+
+
+
+
+# strip the trailing comma
+sed '$s/,$//' RejectedWithDebugInfo-fixed.json
+
+
+
+
+echo -n "[" |cat - RejectedWithDebugInfo-linkReport.json |
+
+sed 's/$/,/' RejectedWithDebugInfo-linkReport.json > RejectedWithDebugInfo-fixed.json
+
+
+echo -n "[" |cat - RejectedWithDebugInfo-linkReport.json | tr '\n' ',' > RejectedWithDebugInfo-fixed.json
+
+
+replace last line
+cat RejectedWithDebugInfo-fixed.json | tr '^$' ']'
+
+
+sed '/^$/d' RejectedWithDebugInfo-linkReport.json > RejectedWithDebugInfo-fixed.json
+
+
+awk 'NF' RejectedWithDebugInfo-linkReport.json > RejectedWithDebugInfo-fixed.json
+
+
+
+###
+
+echo -n "[" |cat - RejectedWithDebugInfo-linkReport.json > RejectedWithDebugInfo-fixed.json
+
+
+
+
+

@@ -13,12 +13,17 @@ Wukong.processor(:mapper) do
 
   def process record
     url_entities = []
+    bad_entities = []
     begin
-      url_entities = record["gnip"]["urls"]
+      if record.has_key?("gnip")
+        url_entities = record["gnip"]["urls"]
+      else
+        url_entities = [{"expanded_url"=>"BAD_RECORD",  "retweetCount"=>"0", "body"=>record }]
+      end
     end
     if validate_record(record)
       url_entities.each do |url_entity|
-        extracted = {"url" => url_entity["expanded_url"], "retweets"=>record["retweetCount"], "body"=>record["body"], "source_urls"=>url_entity["url"]}
+        extracted = {"url" => url_entity["expanded_url"], "posted_time"=>record["postedTime"], "retweets"=>record["retweetCount"], "body"=>record["body"], "source_urls"=>url_entity["url"]}
         yield extracted.to_json
       end
     end
@@ -26,6 +31,14 @@ Wukong.processor(:mapper) do
   
   def validate_record(record)
     # result = match_against(record["body"],ACCEPT_IF_BODY_HAS)
+    unless record.has_key?("gnip") && record["gnip"].has_key?("urls")
+      puts "no GNIP urls data"
+      return false
+    end
+    unless record.has_key?("object") && record["object"].has_key?("twitter_entities") && record["object"]["twitter_entities"].has_key?("urls") && record["object"]["twitter_entities"]["urls"]
+      puts "no object data"
+      return false
+    end
     result = true
     if match_against(record["body"],REJECT_EXPANDED_IF)
       result = false
@@ -75,7 +88,7 @@ end
 
 Wukong.processor(:reducer, Wukong::Processor::Accumulator) do
 
-  attr_accessor :count, :retweets, :text, :source_urls
+  attr_accessor :count, :retweets, :text, :source_urls, :posted_time
 
   field :include_debug_info, String, default:false
   
@@ -96,13 +109,14 @@ Wukong.processor(:reducer, Wukong::Processor::Accumulator) do
     self.retweets += record["retweets"].to_i
     self.text << record["body"]
     self.source_urls << record["source_urls"]
+    self.posted_time = record["posted_time"]
   end
 
   def finalize
     if  include_debug_info
-      to_return = {url:key, count:count, retweets:retweets, total_tweets:count+retweets, text:text, source_urls:source_urls}
+      to_return = {url:key, count:count, retweets:retweets, total_tweets:count+retweets, posted_time: posted_time, text:text, source_urls:source_urls}
     else
-      to_return = {url:key, count:count, retweets:retweets, total_tweets:count+retweets}
+      to_return = {url:key, count:count, retweets:retweets, total_tweets:count+retweets, posted_time: posted_time}
     end
     yield JSON.generate(to_return)
   end

@@ -6,8 +6,8 @@ class ExtractionRunner
   attr_accessor :message, :process_log, :invert_filters
   
   def initialize(opts={})
-    @start_date = opts[:start_date]
-    @end_date = opts[:end_date]
+    @start_date = opts[:start_date].kind_of?(DateTime) ? opts[:start_date] : DateTime.strptime(opts[:start_date], "%Y%m%d")
+    @end_date = opts[:end_date].kind_of?(DateTime) ? opts[:end_date] : DateTime.strptime(opts[:end_date], "%Y%m%d")
     @source_dir_path = opts[:source_dir_path]
     @process_log = {success:[], failure:[]}
     @invert_filters = opts[:invert_filters].nil? ? false : opts[:invert_filters]

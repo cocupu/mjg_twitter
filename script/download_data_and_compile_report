@@ -1,16 +1,14 @@
 #!/usr/bin/env ruby
-
-require "./lib/gnip_downloader"
-require "./lib/extraction_runner"
-require "./lib/report_publisher"
+require File.dirname(__FILE__)+'/../lib/mjg_twitter_tools'
 
 today_string =  "20131215"
-downloader = GnipDownloader.new(skip_download:true, today_string:today_string)
-downloader.download_and_unpack
 #start_date = Time.now-1
 #end_date = Time.now
-start_date = DateTime.strptime(today_string, "%Y%m%d")
-end_date = DateTime.strptime("20140108", "%Y%m%d")
+start_date = today_string
+end_date = "20140108"
+downloader = GnipDownloader.new(skip_download:true, today_string:today_string)
+downloader.download_and_unpack
+
 extractor = ExtractionRunner.new(source_dir_path:downloader.output_dir_path, start_date:start_date, end_date:end_date)
 extractor.process
 puts extractor.message
