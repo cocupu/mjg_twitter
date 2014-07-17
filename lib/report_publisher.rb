@@ -1,6 +1,7 @@
 require 'fileutils'
 require 'json'
 require 'cocupu'
+
 class ReportPublisher
 
   attr_writer :publish_to
@@ -10,10 +11,11 @@ class ReportPublisher
   #   paths_to_reports = ["/tmp/reports/foo1.json", "/tmp/reports/foo2.json"]
   #   bindery_opts = {email:"archivist@example.com", identity:"my_identity", pool:"the_pool", model_id:45}
   #   publish_report_to_databindery(paths_to_reports, bindery_opts)
-  def publish_reports(paths_to_reports, bindery_opts)
+  def publish_reports(paths_to_reports)
     port = bindery_opts[:port] ? bindery_opts[:port] : 80
     Cocupu.start(bindery_opts[:email], bindery_opts[:identity], port)
     paths_to_reports.each do |path_to_report|
+      puts "Publishing #{path_to_report} to DataBindery"
       publish_report_to_databindery(path_to_report, bindery_opts)
       convert_ndj_to_json(path_to_report)
     end
@@ -45,10 +47,25 @@ class ReportPublisher
     end
   end
 
+  def bindery_opts
+    @bindery_opts ||= {:email => config["email"], :identity => config["identity"],:pool => config["pool"], :model_id => config["model_id"], :port => config["port"]}
+  end
+
   # Replaces newlines with commas.  Wraps the entire file's contents with square brackets.
   def convert_ndj_to_json(path_to_report)
     tmp_path =  path_to_report+".tmp"
     %x(printf '%s' "[" |cat - #{path_to_report} | tr '\n' ',' | sed '$s/,$/]/' > #{tmp_path})
     %x(mv #{tmp_path} #{path_to_report})
+  end
+
+  def config
+    @config ||= load_config
+  end
+
+  def load_config
+    environment = ENV['environment'].nil? ? "development" : ENV['environment']
+    bindery_yml_path = File.dirname(__FILE__)+'/../config/databindery.yml'
+    bindery_yml = YAML.load(File.read(bindery_yml_path))
+    config = bindery_yml[environment] || {}
   end
 end

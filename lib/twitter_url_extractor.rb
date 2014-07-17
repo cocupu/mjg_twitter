@@ -88,7 +88,7 @@ end
 
 Wukong.processor(:reducer, Wukong::Processor::Accumulator) do
 
-  attr_accessor :count, :retweets, :text, :source_urls, :posted_time
+  attr_accessor :count, :retweets, :text, :source_urls, :posted_time, :date
 
   field :include_debug_info, String, default:false
   
@@ -110,13 +110,14 @@ Wukong.processor(:reducer, Wukong::Processor::Accumulator) do
     self.text << record["body"]
     self.source_urls << record["source_urls"]
     self.posted_time = record["posted_time"]
+    self.date = Date.parse(record["posted_time"])
   end
 
   def finalize
     if  include_debug_info
-      to_return = {url:key, count:count, retweets:retweets, total_tweets:count+retweets, posted_time: posted_time, text:text, source_urls:source_urls}
+      to_return = {url:key, count:count, retweets:retweets, total_tweets:count+retweets, posted_time: posted_time, date:date, text:text, source_urls:source_urls}
     else
-      to_return = {url:key, count:count, retweets:retweets, total_tweets:count+retweets, posted_time: posted_time}
+      to_return = {url:key, count:count, retweets:retweets, total_tweets:count+retweets, posted_time: posted_time, date:date}
     end
     yield JSON.generate(to_return)
   end
