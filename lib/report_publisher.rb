@@ -13,7 +13,7 @@ class ReportPublisher
   #   publish_report_to_databindery(paths_to_reports, bindery_opts)
   def publish_reports(paths_to_reports)
     port = bindery_opts[:port] ? bindery_opts[:port] : 80
-    Cocupu.start(bindery_opts[:email], bindery_opts[:identity], port)
+    Cocupu.start(bindery_opts[:email], bindery_opts[:password], port, bindery_opts[:host])
     paths_to_reports.each do |path_to_report|
       puts "Publishing #{path_to_report} to DataBindery"
       publish_report_to_databindery(path_to_report, bindery_opts)
@@ -21,6 +21,10 @@ class ReportPublisher
     end
     FileUtils.cp paths_to_reports, publish_to
     message = "Published #{paths_to_reports.length} reports to #{publish_to} and #{bindery_opts[:identity]}/#{bindery_opts[:pool]} on DataBindery"
+    if @bad_lines
+      puts "Bad lines:"
+      puts  @bad_lines
+    end
   end
 
   # @example
@@ -29,7 +33,11 @@ class ReportPublisher
     file = File.open(path_to_report)
     urls = []
     file.each_line do |line|
-      urls << JSON.parse(line)
+      begin
+        urls << JSON.parse(line)
+      rescue => e
+        register_bad_line line
+      end
     end
     urls.each do |url_json|
       node = Cocupu::Node.new({'identity'=>bindery_opts[:identity], 'pool'=>bindery_opts[:pool], 'model_id' => bindery_opts[:model_id], 'data' => url_json})
@@ -48,7 +56,7 @@ class ReportPublisher
   end
 
   def bindery_opts
-    @bindery_opts ||= {:email => config["email"], :identity => config["identity"],:pool => config["pool"], :model_id => config["model_id"], :port => config["port"]}
+    @bindery_opts ||= {:email => config["email"], :password => config["password"], :identity => config["identity"],:pool => config["pool"], :model_id => config["model_id"], :port => config["port"], :host => config["host"]}
   end
 
   # Replaces newlines with commas.  Wraps the entire file's contents with square brackets.
@@ -68,4 +76,11 @@ class ReportPublisher
     bindery_yml = YAML.load(File.read(bindery_yml_path))
     config = bindery_yml[environment] || {}
   end
+
+  def register_bad_line(line, path_to_report)
+    @bad_lines ||= {}
+    @bad_lines[path_to_report] ||= []
+    @bad_lines[path_to_report] << line
+  end
+
 end
