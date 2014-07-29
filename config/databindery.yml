@@ -1,0 +1,8 @@
+development:
+  email:  archivist1@example.com
+  password: archivist1
+  identity: archivist1
+  pool:   mjg_twitter
+  model_id:  45
+  host: localhost
+  port: 8080

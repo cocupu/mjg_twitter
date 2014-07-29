@@ -4,9 +4,12 @@
 # loaded once.
 #
 # See http://rubydoc.info/gems/rspec-core/RSpec/Core/Configuration
+require 'bundler/setup'
 require 'wukong'
 require 'wukong/spec_helpers'
 require 'mjg_twitter_tools'
+#require File.dirname(__FILE__)+'/../lib/mjg_twitter_tools'
+require 'ruby-debug'
 Dir["./spec/support/**/*.rb"].sort.each {|f| require f}
 
 RSpec.configure do |config|

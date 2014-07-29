@@ -4,53 +4,42 @@ require 'json'
 #   {"key":"http://nyti.ms/1eaCmuG","count":1,"retweets":95,"total_tweets":96}
 Wukong.processor(:mapper) do
   REJECT_SHORTENED_IF = [/svg/i, /css/i, /D3JS/i]
-  ACCEPT_SHORTENED_IF_EXPANDED_HAS = [/css/,/CSS/,/svg/, /SVG/]
+  ACCEPT_SHORTENED_IF_EXPANDED_HAS = [/css/i,/svg/i]
   REJECT_EXPANDED_IF = [/instagram.com\/p/,/\/photo\//,
-    /cSS/,/cSs/,/csS/,/Css/,/CSs/,/CsS/,/sVG/,/sVg/,/svG/,/Svg/,/SVg/,/SvG/]
-  ACCEPT_IF_BODY_HAS = [/(\bcss3|html5|svg\b)+|https?:\/\/(www.)?\w+.\w+\/(-css3|html5|svg-)/i]
+    /cSS/,/cSs/,/csS/,/Css/,/CSs/,/CsS/,/sVG/,/sVg/,/svG/,/Svg/,/SVg/,/SvG/, /.jpg$/, /.gif$/, /.svg$/, /.png$/]
+  ACCEPT_IF_BODY_HAS = [/(\bcss3|html5|svg|SVG|HTML5|CSS\b)+|https?:\/\/(www.)?\w+.\w+\/(-css3|html5|svg-)/i]
 
   field :invert_filters, String, default:false
 
   def process record
-    url_entities = []
-    bad_entities = []
-    begin
-      if record.has_key?("gnip")
-        url_entities = record["gnip"]["urls"]
-      else
-        url_entities = [{"expanded_url"=>"BAD_RECORD",  "retweetCount"=>"0", "body"=>record }]
-      end
-    end
-    if validate_record(record)
+    url_entities =  record.fetch("object",{}).fetch("twitter_entities", {}).fetch("urls", [])
+    if !url_entities.empty? && validate_record(record)
       url_entities.each do |url_entity|
-        extracted = {"url" => url_entity["expanded_url"], "posted_time"=>record["postedTime"], "retweets"=>record["retweetCount"], "body"=>record["body"], "source_urls"=>url_entity["url"]}
+        extracted = {"url" => url_entity["expanded_url"].downcase.gsub(/\/$/, ""), "posted_time"=>record["postedTime"], "retweets"=>record["retweetCount"], "body"=>record["body"], "source_urls"=>url_entity["url"]}
         yield extracted.to_json
       end
     end
   end
   
   def validate_record(record)
-    # result = match_against(record["body"],ACCEPT_IF_BODY_HAS)
-    unless record.has_key?("gnip") && record["gnip"].has_key?("urls")
-      puts "no GNIP urls data"
-      return false
+    unless record.fetch("gnip", {}).fetch("language", {"value"=>"en"})["value"] == "en"
+      return false 
     end
-    unless record.has_key?("object") && record["object"].has_key?("twitter_entities") && record["object"]["twitter_entities"].has_key?("urls") && record["object"]["twitter_entities"]["urls"]
-      puts "no object data"
-      return false
-    end
+    # if match_against(record["body"],ACCEPT_IF_BODY_HAS)
+    #   return true
+    # end
     result = true
     if match_against(record["body"],REJECT_EXPANDED_IF)
       result = false
     else
-      record["gnip"]["urls"].each do |url_entity|
+      record.fetch("gnip", {}).fetch("urls", []).each do |url_entity|
         if result
-          result = validate_entity(url_entity) 
+          result = validate_entity(url_entity, record) 
         end
       end
       record["object"]["twitter_entities"]["urls"].each do |url_entity|
         if result
-          result = validate_entity(url_entity) 
+          result = validate_entity(url_entity, record) 
         end
       end
     end
@@ -62,12 +51,19 @@ Wukong.processor(:mapper) do
   end
   
   # returns true if the entity is valid.  Returns false if entity is invalid
-  def validate_entity(url_entity)
+  def validate_entity(url_entity, record)
     valid = true
+    body_minus_urls = record["body"].gsub(url_entity["url"],"").gsub(url_entity["expanded_url"],"")  
+    if match_against(body_minus_urls,ACCEPT_IF_BODY_HAS)
+      return true
+    end
     if match_against(url_entity["expanded_url"],REJECT_EXPANDED_IF)
       return false
     elsif match_against(url_entity["url"],REJECT_SHORTENED_IF)
-      unless match_against(url_entity["expanded_url"],ACCEPT_SHORTENED_IF_EXPANDED_HAS)
+      body_minus_short_url = record["body"].gsub(url_entity["url"],"")
+      if match_against(url_entity["expanded_url"],ACCEPT_SHORTENED_IF_EXPANDED_HAS)
+        return true
+      else  
         return false
       end
     else

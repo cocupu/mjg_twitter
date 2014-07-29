@@ -17,14 +17,10 @@ class ReportPublisher
     paths_to_reports.each do |path_to_report|
       puts "Publishing #{path_to_report} to DataBindery"
       publish_report_to_databindery(path_to_report, bindery_opts)
-      convert_ndj_to_json(path_to_report)
+      #convert_ndj_to_json(path_to_report)
     end
     FileUtils.cp paths_to_reports, publish_to
     message = "Published #{paths_to_reports.length} reports to #{publish_to} and #{bindery_opts[:identity]}/#{bindery_opts[:pool]} on DataBindery"
-    if @bad_lines
-      puts "Bad lines:"
-      puts  @bad_lines
-    end
   end
 
   # @example
@@ -36,7 +32,7 @@ class ReportPublisher
       begin
         urls << JSON.parse(line)
       rescue => e
-        register_bad_line line
+        puts "Bad line: "+ line
       end
     end
     urls.each do |url_json|
@@ -75,12 +71,6 @@ class ReportPublisher
     bindery_yml_path = File.dirname(__FILE__)+'/../config/databindery.yml'
     bindery_yml = YAML.load(File.read(bindery_yml_path))
     config = bindery_yml[environment] || {}
-  end
-
-  def register_bad_line(line, path_to_report)
-    @bad_lines ||= {}
-    @bad_lines[path_to_report] ||= []
-    @bad_lines[path_to_report] << line
   end
 
 end
