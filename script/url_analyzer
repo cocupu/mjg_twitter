@@ -1,0 +1,72 @@
+#!/usr/bin/env ruby
+require 'rubygems'
+require 'bundler/setup'
+require 'optparse'
+#require './lib/mjg_twitter_tools'
+require File.dirname(__FILE__)+'/../lib/mjg_twitter_tools'
+
+options = {}
+parser = OptionParser.new do|opts|
+  opts.banner = "Usage: url_analyzer [options]"
+  opts.on('--gnip_report_date gnip_report_date', 'Date of the GNIP Report that source data will be extracted from') do |gnip_report_date|
+    options[:gnip_report_date] = gnip_report_date
+  end
+  opts.on('-s', '--start start_date', 'First date to generate URL reports for') do |start_date|
+    options[:start_date] = start_date
+  end
+  opts.on('-e', '--end end_date', 'Last date to generate URL reports for') do |end_date|
+    options[:end_date] = end_date
+  end
+  opts.on('-f','--full', 'Perform a full run: download, extract and publish') do
+    options[:download] = true
+    options[:extract] = true
+    options[:publish] = true
+  end
+  opts.on('-d','--download', 'Download new source data from GNIP') do
+    options[:download] = true
+  end
+  opts.on('-x', '--extract', 'Generate new URL reports from the data') do
+    options[:extract] = true
+  end
+  opts.on('-p','--publish', 'Publish Reports to DataBindery') do
+    options[:publish] = true
+  end
+  opts.on('-r','--rejects', 'Generate Reports of Rejected URLs') do
+    options[:rejects] = true
+  end
+end
+parser.parse!
+
+gnip_report_date = options[:gnip_report_date] ? options[:gnip_report_date] : "20131215"
+downloader = GnipDownloader.new(skip_download:true, today_string:gnip_report_date)
+if options[:download]
+  downloader.download_and_unpack
+end
+
+start_date = options[:start_date] ? options[:start_date] : (Time.now-1).strftime("%Y%m%d")
+end_date = options[:end_date] ? options[:end_date] : Time.now.strftime("%Y%m%d")
+
+
+#start_date = gnip_report_date
+#end_date = "20140108"
+extractor = ExtractionRunner.new(source_dir_path:downloader.output_dir_path, start_date:start_date, end_date:end_date)
+if options[:extract]
+  extractor.process
+  puts extractor.message
+end
+
+if options[:publish]
+  publisher = ReportPublisher.new()
+  paths_to_reports = options[:extract] ? extractor.processed_reports : extractor.dates_to_process.map {|d| extractor.destination_file_path_for(d)}
+  publisher.publish_reports(paths_to_reports)
+  puts "\n\n\n\n"
+  puts publisher.message
+end
+
+if options[:rejects]
+  rejects_extractor = ExtractionRunner.new(source_dir_path:downloader.output_dir_path, start_date:start_date, end_date:end_date, invert_filters:true)
+  rejects_extractor.process
+  puts rejects_extractor.message
+  #publisher.publish_reports(rejects_extractor.processed_reports)
+  #puts publisher.message
+end

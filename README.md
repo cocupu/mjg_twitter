@@ -5,7 +5,16 @@ Needs to be run with rubygems version before 2.0.0 (ie. 1.8.10).  See https://gi
 # Scripts
 
 To download the day's data, run the analyzer on it, and publish the resulting report, run this on the command line:
-`$ ./script/download_data_and_compile_report`
+`$ ./script/url_analyzer --full`
+or
+`$ ./script/url_analyzer --download --extract --publish`
+
+If you want to work with specific dates, provide a start date and end date in `%Y%m%d` format
+`$ ./script/url_analyzer --extract --publish --start 20131215 --end 20140108`
+
+By default, the analyzer assumes that you're using data from the current day's GNIP job. If you're using data from another day, use the `--gnip_report_date` flag
+`$ ./script/url_analyzer --extract --gnip_report_date 20131215`
+
 
 # Examples of using wu-hadoop to run the extractor
 
