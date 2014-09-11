@@ -1,7 +1,7 @@
 require 'fileutils'
 require 'zlib'
-class GnipDownloader
-  
+class GnipHptDownloader
+
   attr_writer :today_string, :skip_download, :output_dir_path
   
   def initialize(opts={})

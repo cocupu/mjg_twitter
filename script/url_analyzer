@@ -38,17 +38,22 @@ end
 parser.parse!
 
 gnip_report_date = options[:gnip_report_date] ? options[:gnip_report_date] : "20131215"
-downloader = GnipDownloader.new(skip_download:true, today_string:gnip_report_date)
+#downloader = GnipHptDownloader.new(skip_download:true, today_string:gnip_report_date)
+#if options[:download]
+#  downloader.download_and_unpack
+#end
+
+start_date = options[:start_date] ? options[:start_date] : (DateTime.now-1).strftime("%Y%m%d%H%M")
+end_date = options[:end_date] ? options[:end_date] : DateTime.now.strftime("%Y%m%d%H%M")
+# start_date = (DateTime.now-1.0/24.0).strftime("%Y%m%d%H%M")
+# end_date = DateTime.now.strftime("%Y%m%d%H%M")
+
+downloader = Gnip::SearchResultsDownloader.new(start_date:start_date,end_date:end_date)
+
 if options[:download]
-  downloader.download_and_unpack
+  downloader.download_latest_results
 end
 
-start_date = options[:start_date] ? options[:start_date] : (Time.now-1).strftime("%Y%m%d")
-end_date = options[:end_date] ? options[:end_date] : Time.now.strftime("%Y%m%d")
-
-
-#start_date = gnip_report_date
-#end_date = "20140108"
 extractor = ExtractionRunner.new(source_dir_path:downloader.output_dir_path, start_date:start_date, end_date:end_date)
 if options[:extract]
   extractor.process
