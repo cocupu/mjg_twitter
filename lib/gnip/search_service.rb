@@ -7,13 +7,7 @@ module Gnip
   class SearchException < StandardError; end
   class InvalidSearchException < StandardError; end
   class SearchService
-    GNIP_ACCOUNT = "MJGInternational"
-    GNIP_USERNAME = "marc@mjg.in"
-    GNIP_PASSWORD = "Df9cbNwW[2xik^QQjG2M"
-    GNIP_STREAM_NAME = "prod"
-    SEARCH_ENDPOINT = "https://search.gnip.com/accounts/#{GNIP_ACCOUNT}/search/#{GNIP_STREAM_NAME}.json"
-    COUNT_ENDPOINT = "https://search.gnip.com/accounts/#{GNIP_ACCOUNT}/search/#{GNIP_STREAM_NAME}/counts.json"
-
+    
     def self.activities_for(query, args={})
       json = activities_search(query, args)
       results = parse_activities json
@@ -24,7 +18,7 @@ module Gnip
       query_params[:maxResults] = args[:max] if args[:max]
       query_params[:fromDate], query_params[:toDate] = datestamp_range(args[:from], args[:to]) if args.values_at(:from, :to).all?
       query_params[:next] = args[:next] if args[:next]
-      response = http_post(SEARCH_ENDPOINT, Yajl::Encoder.encode(query_params))
+      response = http_post(self.search_endpoint, Yajl::Encoder.encode(query_params))
       Yajl::Parser.new(symbolize_keys: true).parse(response)
     end
 
@@ -43,10 +37,31 @@ module Gnip
       query_params = {query: args[:query], publisher: 'twitter', bucket: 'hour'}
       query_params[:bucket] = args[:bucket] if args[:bucket]
       query_params[:fromDate], query_params[:toDate] = datestamp_range(args[:from], args[:to]) if args.values_at(:from, :to).all?
-      response = http_post(COUNT_ENDPOINT, Yajl::Encoder.encode(query_params))
+      response = http_post(self.count_endpoint, Yajl::Encoder.encode(query_params))
       Yajl::Parser.new(symbolize_keys: true).parse(response)
     end
+    
+    
+    def self.account
+      gnip_config[:account]
+    end
+    
+    def self.stream_name
+      gnip_config[:stream_name]
+    end
+    
+    def self.search_endpoint
+      "https://search.gnip.com/accounts/#{account}/search/#{stream_name}.json"
+    end
+    
+    def self.count_endpoint
+      "https://search.gnip.com/accounts/#{account}/search/#{stream_name}/counts.json"
+    end
 
+    def self.gnip_config
+      @gnip_config ||= {:account => config["account"], :username => config["username"], :password => config["password"], :stream_name => config["stream_name"]}
+    end
+    
     private
 
     def self.datestamp_range(from, to)
@@ -56,7 +71,7 @@ module Gnip
     end
 
     def self.retrieve_paginated(query_params)
-      response = http_post(SEARCH_ENDPOINT, Yajl::Encoder.encode(query_params))
+      response = http_post(self.search_endpoint, Yajl::Encoder.encode(query_params))
       json = parse_json(response)
       results = parse_activities json
       if json.has_key?(:next)
@@ -90,18 +105,22 @@ module Gnip
 
     def self.http_post(url, data)
       begin
-        RestClient::Request.new(method: :post, url: url, user: GNIP_USERNAME, payload: data,
-                                password: GNIP_PASSWORD, timeout: 30, open_timeout: 30,
+        RestClient::Request.new(method: :post, url: url, user: gnip_config[:username], payload: data,
+                                password: gnip_config[:password], timeout: 30, open_timeout: 30,
                                 headers: {content_type: :json, accept: :json}).execute
       rescue SocketError => se
         raise Gnip::SearchException.new("SocketError: #{se.message}")
       rescue => e
-        unless e.response.nil?
-          if e.response.code == 422
-            raise InvalidSearchException.new parse_error(e.response)
-          else
-            raise e
+        if e.respond_to?(:response)
+          unless e.response.nil?
+            if e.response.code == 422
+              raise InvalidSearchException.new parse_error(e.response)
+            else
+              raise e
+            end
           end
+        else
+          raise e
         end
       end
     end
@@ -136,6 +155,16 @@ module Gnip
         return parser.parse json
       end
     end
+    
+    def self.config
+      @config ||= load_config
+    end
+
+    def self.load_config
+      gnip_yml_path = File.dirname(__FILE__)+'/../../config/gnip.yml'
+      ::YAML.load(File.read(gnip_yml_path))
+    end
+    
   end
 end
 

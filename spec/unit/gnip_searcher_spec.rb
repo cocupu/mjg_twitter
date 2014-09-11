@@ -15,9 +15,9 @@ describe Gnip::Searcher do
   let(:response_without_next_token) { Yajl::Encoder.encode({results:[r2]})}
 
   it "should search activities" do
-    expect(Gnip::SearchService).to receive(:http_post).with(Gnip::SearchService::SEARCH_ENDPOINT, Yajl::Encoder.encode(internal_query_params)).and_return(response_with_next_token1)
-    expect(Gnip::SearchService).to receive(:http_post).with(Gnip::SearchService::SEARCH_ENDPOINT, Yajl::Encoder.encode(internal_query_params.merge(next:"token1"))).and_return(response_with_next_token2)
-    expect(Gnip::SearchService).to receive(:http_post).with(Gnip::SearchService::SEARCH_ENDPOINT, Yajl::Encoder.encode(internal_query_params.merge(next:"token2"))).and_return(response_without_next_token)
+    expect(Gnip::SearchService).to receive(:http_post).with(Gnip::SearchService.search_endpoint, Yajl::Encoder.encode(internal_query_params)).and_return(response_with_next_token1)
+    expect(Gnip::SearchService).to receive(:http_post).with(Gnip::SearchService.search_endpoint, Yajl::Encoder.encode(internal_query_params.merge(next:"token1"))).and_return(response_with_next_token2)
+    expect(Gnip::SearchService).to receive(:http_post).with(Gnip::SearchService.search_endpoint, Yajl::Encoder.encode(internal_query_params.merge(next:"token2"))).and_return(response_without_next_token)
     expect( subject.run_search(sample_query_params) ).to eq([r2,r1])
     expect( subject.resume_search).to eq([r4,r3])
     expect( subject.resume_search).to eq([r2])

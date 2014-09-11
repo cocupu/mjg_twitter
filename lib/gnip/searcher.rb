@@ -20,9 +20,9 @@ module Gnip
 
     def run_search(query_params=query_params)
       if search_type == :counts
-        retrieve_and_parse(Gnip::SearchService::COUNT_ENDPOINT, query_params)
+        retrieve_and_parse(Gnip::SearchService::count_endpoint, query_params)
       else
-        retrieve_and_parse(Gnip::SearchService::SEARCH_ENDPOINT, query_params)
+        retrieve_and_parse(Gnip::SearchService::search_endpoint, query_params)
       end
     end
 
@@ -36,8 +36,6 @@ module Gnip
 
     # GNIP limits pagination to 500 activities per page
     def retrieve_and_parse(endpoint, query_params)
-      #response = GNIP::SearchService.http_post(endpoint, Yajl::Encoder.encode(query_params))
-      #json = GNIP::SearchService.parse_response(response)
       @query_params = query_params
       if search_type == :counts
         json = Gnip::SearchService.counts_search(query_params)

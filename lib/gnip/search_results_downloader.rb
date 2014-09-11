@@ -1,6 +1,5 @@
 # Downloads a set of search results to a specified directory
 class Gnip::SearchResultsDownloader
-  DEFAULT_RULES = "(JavaScript OR jQuery OR Node.js OR AngularJS OR CSS3 OR HTML5 OR D3.js OR SVG OR url_contains:CSS3 OR url_contains:SVG OR url_contains:jquery OR url_contains:html5) has:links"
 
   attr_accessor :today_string, :skip_download, :output_dir_path, :start_date, :end_date, :searcher
 

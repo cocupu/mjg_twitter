@@ -1,5 +1,6 @@
 require 'active_support'
 require "active_support/core_ext"
+require 'yaml'
 autoload :Gnip, File.dirname(__FILE__)+'/gnip'
 autoload :GnipHptDownloader, File.dirname(__FILE__)+'/gnip_hpt_downloader'
 autoload :ReportPublisher, File.dirname(__FILE__)+'/report_publisher'
