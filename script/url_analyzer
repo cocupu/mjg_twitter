@@ -2,14 +2,14 @@
 require 'rubygems'
 require 'bundler/setup'
 require 'optparse'
-#require './lib/mjg_twitter_tools'
-require File.dirname(__FILE__)+'/../lib/mjg_twitter_tools'
+require './lib/mjg_twitter_tools'
+# require File.dirname(__FILE__)+'/../lib/mjg_twitter_tools'
 
 options = {}
 parser = OptionParser.new do|opts|
   opts.banner = "Usage: url_analyzer [options]"
-  opts.on('--gnip_report_date gnip_report_date', 'Date of the GNIP Report that source data will be extracted from') do |gnip_report_date|
-    options[:gnip_report_date] = gnip_report_date
+  opts.on('--data_directory data_directory', 'Directory to download twitter activities into') do |data_directory|
+    options[:data_directory] = data_directory
   end
   opts.on('-s', '--start start_date', 'First date to generate URL reports for') do |start_date|
     options[:start_date] = start_date
@@ -45,10 +45,12 @@ gnip_report_date = options[:gnip_report_date] ? options[:gnip_report_date] : "20
 
 start_date = options[:start_date] ? options[:start_date] : (DateTime.now-1).strftime("%Y%m%d%H%M")
 end_date = options[:end_date] ? options[:end_date] : DateTime.now.strftime("%Y%m%d%H%M")
+data_directory = options[:data_directory] ? options[:data_directory] : start_date
+
 # start_date = (DateTime.now-1.0/24.0).strftime("%Y%m%d%H%M")
 # end_date = DateTime.now.strftime("%Y%m%d%H%M")
 
-downloader = Gnip::SearchResultsDownloader.new(start_date:start_date,end_date:end_date)
+downloader = Gnip::SearchResultsDownloader.new(start_date:start_date,end_date:end_date,data_directory:data_directory)
 
 if options[:download]
   downloader.download_latest_results

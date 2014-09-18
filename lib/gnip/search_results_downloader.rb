@@ -1,10 +1,10 @@
 # Downloads a set of search results to a specified directory
 class Gnip::SearchResultsDownloader
 
-  attr_accessor :today_string, :skip_download, :output_dir_path, :start_date, :end_date, :searcher
+  attr_accessor :data_directory, :skip_download, :output_dir_path, :start_date, :end_date, :searcher
 
   def initialize(opts={})
-    @today_string = opts[:today_string]
+    @data_directory = opts[:data_directory]
     @output_dir_path = opts[:output_dir_path]
     @start_date = opts[:start_date] ? opts[:start_date] : (now-1).strftime("%Y%m%d%H%M")
     @end_date = opts[:end_date] ? opts[:end_date] : now.strftime("%Y%m%d%H%M")
@@ -40,7 +40,7 @@ class Gnip::SearchResultsDownloader
   end
 
   def download_dir_path
-    "data/#{today_string}"
+    "data/#{data_directory}"
   end
 
   # By default, output_dir_path is the same as download_dir_path since nothing has to be unzipped (unlike HPT Downloader)
@@ -48,7 +48,7 @@ class Gnip::SearchResultsDownloader
     @output_dir_path ||= download_dir_path
   end
 
-  def today_string
-    @today_string ||= Time.now.strftime("%Y%m%d")
+  def data_directory
+    @data_directory ||= Time.now.strftime("%Y%m%d")
   end
 end
