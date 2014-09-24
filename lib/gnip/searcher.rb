@@ -33,6 +33,31 @@ module Gnip
     def more_results?
       !@finished
     end
+    
+    def download_into(download_dir_path, query_opts)
+      initialize_directory(download_dir_path)
+      counter = 0
+      while more_results?
+        counter += 1
+        print " Writing #{download_dir_path}/"+counter.to_s + ".json\r"
+        $stdout.flush
+        if counter == 1
+          results = run_search(query_opts)
+        else
+          results = resume_search
+        end
+        File.open(download_dir_path+"/#{counter}.json", 'w') do |file|
+          results.each_with_index do |result, index| 
+            line_end = (index < results.length-1) ? "\n" : ""
+            file.write(result.to_json+line_end) 
+          end
+        end
+      end
+    end
+    
+    def initialize_directory(dir_path)
+      FileUtils::mkdir_p dir_path
+    end
 
     # GNIP limits pagination to 500 activities per page
     def retrieve_and_parse(endpoint, query_params)

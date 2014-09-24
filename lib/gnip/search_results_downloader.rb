@@ -6,8 +6,16 @@ class Gnip::SearchResultsDownloader
   def initialize(opts={})
     @data_directory = opts[:data_directory]
     @output_dir_path = opts[:output_dir_path]
-    @start_date = opts[:start_date] ? opts[:start_date] : (now-1).strftime("%Y%m%d%H%M")
-    @end_date = opts[:end_date] ? opts[:end_date] : now.strftime("%Y%m%d%H%M")
+    if opts[:start_date]
+      @start_date = opts[:start_date].kind_of?(Date) ? opts[:start_date] : Date.strptime(opts[:start_date], "%Y%m%d")
+    else
+      @start_date = (Date.today-1)
+    end
+    if opts[:end_date]
+      @end_date = opts[:end_date].kind_of?(Date) ? opts[:end_date] : Date.strptime(opts[:end_date], "%Y%m%d")
+    else
+      @end_date = (Date.today)
+    end
   end
 
   def searcher
@@ -18,29 +26,30 @@ class Gnip::SearchResultsDownloader
     setup_download_dir
     puts "Downloading today's activities."
     start_time = Time.now
-    counter = 0
-    while searcher.more_results?
-      counter += 1
-      print " Writing #{download_dir_path}/"+counter.to_s + ".json\r"
-      $stdout.flush
-      if counter == 1
-        results = searcher.run_search(query:Gnip::Searcher.default_rules, from:start_date, to:end_date, max:500)
-      else
-        results = searcher.resume_search
-      end
-      File.open(download_dir_path+"/#{counter}.json", 'w') do |file|
-        results.each {|result| file.write(result.to_json+"\n") }
-      end
+    dates_to_download.each do |date|
+      search_start_time = date.strftime("%Y%m%d%H%M")
+      search_end_time = (date+1).strftime("%Y%m%d%H%M")
+      searcher.finished = false
+      searcher.download_into(download_dir_path(date), query:Gnip::Searcher.default_rules, from:search_start_time, to:search_end_time, max:500)
     end
-    puts "... download complete. Created #{counter} files in #{download_dir_path}.  Duration #{Time.now-start_time} seconds."
+    puts "... download complete. Created files in #{download_dir_path}.  Duration #{Time.now-start_time} seconds."
+  end
+  
+  def dates_to_download
+    start_date.upto(end_date)
   end
 
   def setup_download_dir
     FileUtils::mkdir_p download_dir_path
   end
 
-  def download_dir_path
-    "data/#{data_directory}"
+  def download_dir_path(date=nil)
+    base_path = "data/#{data_directory}"
+    if date
+      return base_path+"/#{date.strftime("%Y_%m_%d")}" 
+    else
+      return base_path
+    end
   end
 
   # By default, output_dir_path is the same as download_dir_path since nothing has to be unzipped (unlike HPT Downloader)
@@ -49,6 +58,6 @@ class Gnip::SearchResultsDownloader
   end
 
   def data_directory
-    @data_directory ||= Time.now.strftime("%Y%m%d")
+    @data_directory ||= Time.now.strftime("%Y%m%d%H%M")
   end
 end

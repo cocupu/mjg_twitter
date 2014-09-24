@@ -40,7 +40,8 @@ class ExtractionRunner
   
   def expression_for_files_to_process(date)
     #source_dir_path+"/20131215-20140115_f3a6rxbkax_#{date.strftime("%Y_%m_%d")}*.json"
-    source_dir_path+"/*.json"
+    # source_dir_path+"/*.json"
+    source_dir_path+"/#{date.strftime("%Y_%m_%d")}/*.json"
   end
   
   def dates_to_process

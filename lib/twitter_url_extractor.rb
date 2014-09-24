@@ -1,4 +1,6 @@
 require 'json'
+require 'uri'
+require 'cgi'
 # Returns a report on how many times each URL has been tweeted.
 # Yields JSON containing key, count, retweets and total tweets.  Example:
 #   {"key":"http://nyti.ms/1eaCmuG","count":1,"retweets":95,"total_tweets":96}
@@ -12,11 +14,14 @@ Wukong.processor(:mapper) do
   field :invert_filters, String, default:false
 
   def process record
-    url_entities =  record.fetch("object",{}).fetch("twitter_entities", {}).fetch("urls", [])
+    # url_entities =  record.fetch("object",{}).fetch("twitter_entities", {}).fetch("urls", [])
+    url_entities =  record.fetch("gnip",{}).fetch("urls", [])
     if !url_entities.empty? && validate_record(record)
       url_entities.each do |url_entity|
-        extracted = {"url" => url_entity["expanded_url"].downcase.gsub(/\/$/, ""), "posted_time"=>record["postedTime"], "retweets"=>record["retweetCount"], "body"=>record["body"], "source_urls"=>url_entity["url"]}
-        yield extracted.to_json
+        unless url_entity["expanded_url"].nil?
+          extracted = {"url" => normalize_url(url_entity["expanded_url"]), "posted_time"=>record["postedTime"], "retweets"=>record["retweetCount"], "body"=>record["body"], "source_urls"=>url_entity["url"]}
+          yield extracted.to_json
+        end
       end
     end
   end
@@ -37,7 +42,7 @@ Wukong.processor(:mapper) do
           result = validate_entity(url_entity, record) 
         end
       end
-      record["object"]["twitter_entities"]["urls"].each do |url_entity|
+      record.fetch("object",{}).fetch("twitter_entities", {}).fetch("urls", []).each do |url_entity|
         if result
           result = validate_entity(url_entity, record) 
         end
@@ -79,6 +84,22 @@ Wukong.processor(:mapper) do
       end
     end
     return matched
+  end
+
+  def normalize_url(url)
+    uri = URI.parse(URI.encode(url))
+    if uri.query
+      hquery = CGI::parse(uri.query)
+      components = Hash[uri.component.map { |key| [key, uri.send(key)] }]
+      components.delete(:port) unless components[:port] != 443
+      new_hquery = hquery.select {|k,v| !k.include?("utm_")}
+      new_query = new_hquery.empty? ? nil : URI.encode_www_form(new_hquery)
+      new_components = {path: uri.path, query: new_query}
+      new_uri = URI::Generic.build(components.merge(new_components))
+      return URI.decode(new_uri.to_s).downcase.gsub(/\/$/, "")
+    else
+      return url.downcase.gsub(/\/$/, "")
+    end
   end
 end
 

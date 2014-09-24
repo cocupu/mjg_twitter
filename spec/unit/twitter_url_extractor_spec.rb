@@ -31,6 +31,10 @@ describe :mapper do
     expected = {"url"=>"https://web.archive.org/web/20070916144913/http://wp.netscape.com/newsref/pr/newsrelease67.html","posted_time"=>"2013-12-15T21:39:04.000Z","retweets"=>274,"body"=>"RT @samth: Today in 1995: \"NETSCAPE AND SUN ANNOUNCE JAVASCRIPT, THE OPEN, CROSS-PLATFORM OBJECT SCRIPTING LANGUAGE\" https://t.co/DPDngGu4UR","source_urls"=>"https://t.co/DPDngGu4UR"}
     processor.given(records.first).should emit(expected.to_json)
   end
+  it "should strip utm_ values from urls" do
+    expected = {"url"=>"https://vidtok.com","posted_time"=>"2014-08-27T15:39:13.000Z","retweets"=>312,"body"=>"RT @vidtok: #HTML5 built, Sign up for a free trial of @vidtok live video chat. Use promo code \"TW2014\" for an extra 10% off. http://t.co/w7", "source_urls"=>"http://t.co/w7cjXaZewJ"}
+    processor.given(records.last).should emit(expected.to_json)
+  end
   it "should filter records" do
     processor.given(records.first).should emit(1).records
     processor.given(records[1]).should emit(1).records
