@@ -35,10 +35,7 @@ class ReportPublisher
         puts "Bad line: "+ line
       end
     end
-    urls.each do |url_json|
-      node = Cocupu::Node.new({'identity'=>bindery_opts[:identity], 'pool'=>bindery_opts[:pool], 'model_id' => bindery_opts[:model_id], 'data' => url_json})
-      node.save
-    end
+    Cocupu::Node.import({'identity'=>bindery_opts[:identity], 'pool'=>bindery_opts[:pool], "model_id"=>bindery_opts[:model_id], "data"=>urls})
   end
 
   def publish_to

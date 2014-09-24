@@ -17,9 +17,15 @@ describe ReportPublisher do
   end
 
   describe "publish_report_to_databindery" do
-    it "should create DataBindery node from each line in report" do
+    it "should batch import the items from json file" do
       path_to_report = fixture_file_path("linkReport-10items.json")
-      expect(Cocupu::Node).to receive(:new).exactly(10).times.and_return(double("Node", save:true))
+      file = File.open(path_to_report)
+      urls = []
+      file.each_line do |line|
+        urls << JSON.parse(line)
+      end
+      # expect(Cocupu::Node).to receive(:new).exactly(10).times.and_return(double("Node", save:true))
+      expect(Cocupu::Node).to receive(:import).with('identity'=>bindery_opts[:identity], 'pool'=>bindery_opts[:pool], "model_id"=>bindery_opts[:model_id], "data"=>urls)
       subject.publish_report_to_databindery(path_to_report, bindery_opts)
     end
   end
