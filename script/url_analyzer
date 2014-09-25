@@ -43,8 +43,8 @@ gnip_report_date = options[:gnip_report_date] ? options[:gnip_report_date] : "20
 #  downloader.download_and_unpack
 #end
 
-start_date = options[:start_date] ? options[:start_date] : (Date.now-1).strftime("%Y%m%d")
-end_date = options[:end_date] ? options[:end_date] : Date.now.strftime("%Y%m%d")
+start_date = options[:start_date] ? options[:start_date] : (Date.today-1).strftime("%Y%m%d")
+end_date = options[:end_date] ? options[:end_date] : Date.today.strftime("%Y%m%d")
 data_directory = options[:data_directory] ? options[:data_directory] : start_date
 
 # start_date = (DateTime.now-1.0/24.0).strftime("%Y%m%d%H%M")
