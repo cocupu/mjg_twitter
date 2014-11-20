@@ -35,7 +35,8 @@ class ReportPublisher
         puts "Bad line: "+ line
       end
     end
-    Cocupu::Node.import({'identity'=>bindery_opts[:identity], 'pool'=>bindery_opts[:pool], "model_id"=>bindery_opts[:model_id], "data"=>urls})
+    converted_data = Cocupu::Model.load(bindery_opts[:model_id]).convert_data_keys(urls)
+    Cocupu::Node.import({'identity'=>bindery_opts[:identity], 'pool'=>bindery_opts[:pool], "model_id"=>bindery_opts[:model_id], "data"=>converted_data})
   end
 
   def publish_to

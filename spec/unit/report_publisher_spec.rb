@@ -2,6 +2,7 @@ require 'spec_helper'
 
 describe ReportPublisher do
   let(:bindery_opts) { {email:"archivist@example.com", identity:"my_identity", host:"myhost", password:"mypass", pool:"the_pool", model_id:45} }
+  let(:bindery_model) { Cocupu::Model.new("fields"=>[{"id"=>"101", "code"=>"url"}, {"id"=>"102", "code"=>"count"}, {"id"=>"102", "code"=>"retweets"}, {"id"=>"102", "code"=>"total_tweets"}, {"id"=>"102", "code"=>"text"}, {"id"=>"102", "code"=>"source_urls"}]) }
 
   describe "publish_reports" do
     it "should publish to DataBindery" do
@@ -17,6 +18,9 @@ describe ReportPublisher do
   end
 
   describe "publish_report_to_databindery" do
+    before do
+      allow(Cocupu::Model).to receive(:load).with(bindery_opts[:model_id]).and_return(bindery_model)
+    end
     it "should batch import the items from json file" do
       path_to_report = fixture_file_path("linkReport-10items.json")
       file = File.open(path_to_report)
@@ -24,8 +28,8 @@ describe ReportPublisher do
       file.each_line do |line|
         urls << JSON.parse(line)
       end
-      # expect(Cocupu::Node).to receive(:new).exactly(10).times.and_return(double("Node", save:true))
-      expect(Cocupu::Node).to receive(:import).with('identity'=>bindery_opts[:identity], 'pool'=>bindery_opts[:pool], "model_id"=>bindery_opts[:model_id], "data"=>urls)
+      converted_data = bindery_model.convert_data_keys(urls)
+      expect(Cocupu::Node).to receive(:import).with('identity'=>bindery_opts[:identity], 'pool'=>bindery_opts[:pool], "model_id"=>bindery_opts[:model_id], "data"=>converted_data)
       subject.publish_report_to_databindery(path_to_report, bindery_opts)
     end
   end
