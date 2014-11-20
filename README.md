@@ -2,6 +2,15 @@
 
 Needs to be run with rubygems version before 2.0.0 (ie. 1.8.10).  See https://github.com/infochimps-labs/wukong-hadoop/issues/4
 
+To download the code and run the tests:
+```
+git clone git@github.com:FrontendMasters/twitter_url_analyzer.git
+cd twitter_url_analyzer
+bundle install
+[MODIFY config/databindery.yml and config/gnip.yml with your credentials]
+rake spec
+```
+
 # Scripts
 
 To download the day's data, run the analyzer on it, and publish the resulting report, run this on the command line:
