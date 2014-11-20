@@ -88,18 +88,17 @@ Wukong.processor(:mapper) do
 
   def normalize_url(url)
     uri = URI.parse(URI.encode(url))
+    components = Hash[uri.component.map { |key| [key, uri.send(key)] }]
+    components.delete(:port) if [443,80].include?(components[:port])
+    components[:host].downcase!
     if uri.query
       hquery = CGI::parse(uri.query)
-      components = Hash[uri.component.map { |key| [key, uri.send(key)] }]
-      components.delete(:port) unless components[:port] != 443
       new_hquery = hquery.select {|k,v| !k.include?("utm_")}
       new_query = new_hquery.empty? ? nil : URI.encode_www_form(new_hquery)
-      new_components = {path: uri.path, query: new_query}
-      new_uri = URI::Generic.build(components.merge(new_components))
-      return URI.decode(new_uri.to_s).gsub(/\/$/, "")
-    else
-      return url.gsub(/\/$/, "")
+      components.merge!({path: uri.path, query: new_query})
     end
+    new_uri = URI::Generic.build(components)
+    return URI.decode(new_uri.to_s).gsub(/\/$/, "")
   end
 end
 
