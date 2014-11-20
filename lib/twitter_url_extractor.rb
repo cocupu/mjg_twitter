@@ -96,9 +96,9 @@ Wukong.processor(:mapper) do
       new_query = new_hquery.empty? ? nil : URI.encode_www_form(new_hquery)
       new_components = {path: uri.path, query: new_query}
       new_uri = URI::Generic.build(components.merge(new_components))
-      return URI.decode(new_uri.to_s).downcase.gsub(/\/$/, "")
+      return URI.decode(new_uri.to_s).gsub(/\/$/, "")
     else
-      return url.downcase.gsub(/\/$/, "")
+      return url.gsub(/\/$/, "")
     end
   end
 end
@@ -124,8 +124,8 @@ Wukong.processor(:reducer, Wukong::Processor::Accumulator) do
   def accumulate record
     self.count += 1
     self.retweets += record["retweets"].to_i
-    self.text << record["body"]
-    self.source_urls << record["source_urls"]
+    self.text << record["body"] unless self.text.include? record["body"]
+    self.source_urls << record["source_urls"] unless self.source_urls.inlcude? record["source_urls"]
     self.posted_time = record["posted_time"]
     self.date = Date.parse(record["posted_time"])
   end

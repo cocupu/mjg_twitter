@@ -33,19 +33,32 @@ describe :mapper do
   end
   it "should strip utm_ values from urls" do
     expected = {"url"=>"https://vidtok.com","posted_time"=>"2014-08-27T15:39:13.000Z","retweets"=>312,"body"=>"RT @vidtok: #HTML5 built, Sign up for a free trial of @vidtok live video chat. Use promo code \"TW2014\" for an extra 10% off. http://t.co/w7", "source_urls"=>"http://t.co/w7cjXaZewJ"}
-    processor.given(records.last).should emit(expected.to_json)
+    processor.given(records[10]).should emit(expected.to_json)
   end
-  it "should filter records" do
+  it "should preserve case variation in urls" do
+    expected = {"url"=>"http://haxiomic.github.io/GPU-Fluid-Experiments/html5","posted_time"=>"2014-11-18T21:39:04.000Z","retweets"=>876,"body"=>"Wow, this is neat - and beautiful http://t.co/ITcw3JKGqV Fluid dynamics simulator using HTML5 \u0026amp; WebGL, GPLv3 #freesoftware", "source_urls"=>"http://t.co/ITcw3JKGqV"}
+    processor.given(records[12]).should emit(expected.to_json)
+  end
+  it "should keep the records we want" do
     processor.given(records.first).should emit(1).records
     processor.given(records[1]).should emit(1).records
+    processor.given(records[5]).should emit(1).records
+    processor.given(records[6]).should emit(1).records
+  end
+  it "should filter out false matches on css, svg, etc." do
     processor.given(records[2]).should emit(0).records
     processor.given(records[3]).should emit(0).records
     processor.given(records[4]).should emit(0).records
-    processor.given(records[5]).should emit(1).records
-    processor.given(records[6]).should emit(1).records
     processor.given(records[7]).should emit(0).records
     processor.given(records[8]).should emit(0).records
+  end
+  it "should reject non-english tweets" do
     processor.given(records[9]).should emit(0).records
+  end
+  it "should filter per-url when record has multiple urls" do
+    pending "Until we have time to tackle this feature"
+    expected = {"url"=>"http://8grids.com/portfolio/peak-wordpress-theme","posted_time"=>nil,"retweets"=>274,"body"=>"RT @8Grids: Peak - Royal MultiPurpose Retina WordPress Theme http://t.co/R3akWujGaB #wordpress #webdesign #HTML5 #CSS3 http://t.co/30yTwXoz","source_urls"=>"http://t.co/R3akWujGaB"}
+    processor.given(records[11]).should emit(expected.to_json)
   end
 end
 
