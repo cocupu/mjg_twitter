@@ -104,7 +104,7 @@ end
 
 Wukong.processor(:reducer, Wukong::Processor::Accumulator) do
 
-  attr_accessor :count, :retweets, :text, :source_urls, :posted_time, :date
+  attr_accessor :count, :retweets, :text, :source_urls, :posted_time, :date, :the_record
 
   field :include_debug_info, String, default:false
   
@@ -123,10 +123,14 @@ Wukong.processor(:reducer, Wukong::Processor::Accumulator) do
   def accumulate record
     self.count += 1
     self.retweets += record["retweets"].to_i
-    self.text << record["body"] unless self.text.include? record["body"]
-    self.source_urls << record["source_urls"] unless self.source_urls.inlcude? record["source_urls"]
     self.posted_time = record["posted_time"]
     self.date = Date.parse(record["posted_time"])
+    unless self.text.include? record["body"]
+      self.text << record["body"] #unless self.text.include? record["body"]
+    end
+    unless self.source_urls.inlcude? record["source_urls"]
+      self.source_urls << record["source_urls"] #unless self.source_urls.inlcude? record["source_urls"]
+    end
   end
 
   def finalize
