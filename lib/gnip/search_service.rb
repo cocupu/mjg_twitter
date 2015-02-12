@@ -19,7 +19,32 @@ module Gnip
       query_params[:fromDate], query_params[:toDate] = datestamp_range(args[:from], args[:to]) if args.values_at(:from, :to).all?
       query_params[:next] = args[:next] if args[:next]
       response = http_post(self.search_endpoint, Yajl::Encoder.encode(query_params))
-      Yajl::Parser.new(symbolize_keys: true).parse(response)
+      if response.nil?
+        puts "GNIP returned a nil response.  Retrying..."
+        # re-try the request if GNIP returned nil response
+        response = http_post(self.search_endpoint, Yajl::Encoder.encode(query_params))
+        if response.nil?
+          failures = 1
+          until !response.nil? do
+            failures += 1
+            if failures > 10 
+              break
+            end
+            puts "GNIP returned a nil response #{failures} times. Retrying..."
+            if failures > 5 
+              amount_to_wait = failures-4
+              puts "   waiting #{amount_to_wait} seconds before retrying..."
+              sleep amount_to_wait
+            end
+            response = http_post(self.search_endpoint, Yajl::Encoder.encode(query_params))
+          end
+        end
+      end
+      begin
+        Yajl::Parser.new(symbolize_keys: true).parse(response)
+      rescue Yajl::ParseError => e
+        raise RuntimeError, "GNIP returned invalid JSON. The Error: #{e}.  The content from GNIP:[#{response.class}] #{response}"
+      end
     end
 
     def self.counts_for(query, args={})

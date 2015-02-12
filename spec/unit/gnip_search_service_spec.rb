@@ -26,6 +26,12 @@ describe Gnip::SearchService do
     results.count.should == 9
     results.map {|r| r[:id]}.should == ["result3","result3","result3","result2","result2","result2","result1","result1","result1"]
   end
+  
+  it "should recover from GNIP returning an empty response" do
+    query_params = {query:default_rules,publisher:"twitter",max:500,from:(now-1).strftime("%Y%m%d%H%M"),to:now.strftime("%Y%m%d%H%M") } 
+    expect(Gnip::SearchService).to receive(:http_post).and_return(nil, nil, nil, nil, nil, nil, response_without_next_token)
+    results = Gnip::SearchService.activities_search(query_params)
+  end
 
   it "should wait and resume rate-limited requests" do
     expect(Gnip::SearchService).to receive(:sleep).with(4)
