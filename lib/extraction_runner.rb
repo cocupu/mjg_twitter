@@ -21,7 +21,7 @@ class ExtractionRunner
     dates_to_process.each do |date|
       destination_path = destination_file_path_for(date)
       puts "processing #{date.strftime("%Y_%m_%d")}"
-      %x(cat #{expression_for_files_to_process(date)} | bundle exec wu-hadoop #{extractor_path} #{extractor_flags} | wu-local sort --on=total_tweets --numeric --reverse > #{destination_path})
+      %x(cat #{expression_for_files_to_process(date)} | bundle exec wu-hadoop #{extractor_path} #{extractor_flags} | wu-local sort --on=weighted_count --numeric --reverse > #{destination_path})
       #puts "[SKIPPED] processing #{expression_for_files_to_process(date)} to #{destination_path}"
       process_log[:success] << {destination_file_path:destination_path}
     end

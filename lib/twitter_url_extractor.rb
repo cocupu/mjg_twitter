@@ -1,10 +1,13 @@
 require 'json'
 require 'uri'
 require 'cgi'
+require File.dirname(__FILE__)+'/concerns/uses_blacklist'
 # Returns a report on how many times each URL has been tweeted.
 # Yields JSON containing key, count, retweets and total tweets.  Example:
 #   {"key":"http://nyti.ms/1eaCmuG","count":1,"retweets":95,"total_tweets":96}
 Wukong.processor(:mapper) do
+  include UsesBlacklist
+
   REJECT_SHORTENED_IF = [/svg/i, /css/i, /D3JS/i]
   ACCEPT_SHORTENED_IF_EXPANDED_HAS = [/css/i,/svg/i]
   REJECT_EXPANDED_IF = [/instagram.com\/p/,/\/photo\//,
@@ -17,6 +20,15 @@ Wukong.processor(:mapper) do
     # url_entities =  record.fetch("object",{}).fetch("twitter_entities", {}).fetch("urls", [])
     url_entities =  record.fetch("gnip",{}).fetch("urls", [])
     if !url_entities.empty? && validate_record(record)
+      if url_entities.length > 1
+        # evaluate entities individually in a more strict fashion to keep only the good ones from each tweet
+        # This filters out things like links to images that were included in a tweet that has a valid URL
+        filtered_entities = url_entities.select {|url_entity| validate_entity(url_entity) }
+        if filtered_entities.empty?
+          puts "WARN: filtered all entities out of #{url_entities}.  It looked like good content, but all of the associated URLs failed filters."
+        end
+        url_entities = filtered_entities   
+      end
       url_entities.each do |url_entity|
         unless url_entity["expanded_url"].nil?
           extracted = {"url" => normalize_url(url_entity["expanded_url"]), "posted_time"=>record["postedTime"], "retweets"=>record["retweetCount"], "body"=>record["body"], "source_urls"=>url_entity["url"]}
@@ -56,11 +68,19 @@ Wukong.processor(:mapper) do
   end
   
   # returns true if the entity is valid.  Returns false if entity is invalid
-  def validate_entity(url_entity, record)
+  def validate_entity(url_entity, record=nil)
     valid = true
-    body_minus_urls = record["body"].gsub(url_entity["url"],"").gsub(url_entity["expanded_url"],"")  
-    if match_against(body_minus_urls,ACCEPT_IF_BODY_HAS)
-      return true
+    
+    # If record was provided, allow record content to skip evaluation
+    unless record.nil?
+      body_minus_urls = record["body"].gsub(url_entity["url"],"").gsub(url_entity["expanded_url"],"")  
+      if match_against(body_minus_urls,ACCEPT_IF_BODY_HAS)
+        return true
+      end
+    end
+    
+    if matches_blacklist?(url_entity["expanded_url"])
+      return false
     end
     if match_against(url_entity["expanded_url"],REJECT_EXPANDED_IF)
       return false
@@ -135,9 +155,9 @@ Wukong.processor(:reducer, Wukong::Processor::Accumulator) do
 
   def finalize
     if  include_debug_info
-      to_return = {url:key, count:count, retweets:retweets, total_tweets:count+retweets, posted_time: posted_time, date:date, text:text, source_urls:source_urls}
+      to_return = {url:key, weighted_count:count*10+retweets, count:count, retweets:retweets, total_tweets:count+retweets, posted_time: posted_time, date:date, text:text, source_urls:source_urls}
     else
-      to_return = {url:key, count:count, retweets:retweets, total_tweets:count+retweets, posted_time: posted_time, date:date}
+      to_return = {url:key, weighted_count:count*10+retweets, count:count, retweets:retweets, total_tweets:count+retweets, posted_time: posted_time, date:date}
     end
     yield JSON.generate(to_return)
   end
