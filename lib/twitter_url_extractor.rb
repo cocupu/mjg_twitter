@@ -17,7 +17,6 @@ Wukong.processor(:mapper) do
   field :invert_filters, String, default:false
 
   def process record
-    # url_entities =  record.fetch("object",{}).fetch("twitter_entities", {}).fetch("urls", [])
     url_entities =  record.fetch("gnip",{}).fetch("urls", [])
     if !url_entities.empty? && validate_record(record)
       if url_entities.length > 1
@@ -38,23 +37,21 @@ Wukong.processor(:mapper) do
     end
   end
   
-  def validate_record(record)
+  def validate_record(record)    
     unless record.fetch("gnip", {}).fetch("language", {"value"=>"en"})["value"] == "en"
       return false 
     end
-    # if match_against(record["body"],ACCEPT_IF_BODY_HAS)
-    #   return true
-    # end
+
     result = true
+    
     if match_against(record["body"],REJECT_EXPANDED_IF)
       result = false
+    elsif record.fetch("gnip",{}).fetch("urls", []).length == 1 && contains_blacklisted_urls?(record)
+      result = false
+    elsif match_against(tweet_body_minus_urls(record),ACCEPT_IF_BODY_HAS)
+      result = true 
     else
-      record.fetch("gnip", {}).fetch("urls", []).each do |url_entity|
-        if result
-          result = validate_entity(url_entity, record) 
-        end
-      end
-      record.fetch("object",{}).fetch("twitter_entities", {}).fetch("urls", []).each do |url_entity|
+      url_entities_from(record).each do |url_entity|
         if result
           result = validate_entity(url_entity, record) 
         end
@@ -71,21 +68,11 @@ Wukong.processor(:mapper) do
   def validate_entity(url_entity, record=nil)
     valid = true
     
-    # If record was provided, allow record content to skip evaluation
-    unless record.nil?
-      body_minus_urls = record["body"].gsub(url_entity["url"],"").gsub(url_entity["expanded_url"],"")  
-      if match_against(body_minus_urls,ACCEPT_IF_BODY_HAS)
-        return true
-      end
-    end
-    
-    if matches_blacklist?(url_entity["expanded_url"])
+    if matches_blacklist?(normalize_url(url_entity["expanded_url"]))
       return false
-    end
-    if match_against(url_entity["expanded_url"],REJECT_EXPANDED_IF)
+    elsif match_against(url_entity["expanded_url"],REJECT_EXPANDED_IF)
       return false
     elsif match_against(url_entity["url"],REJECT_SHORTENED_IF)
-      body_minus_short_url = record["body"].gsub(url_entity["url"],"")
       if match_against(url_entity["expanded_url"],ACCEPT_SHORTENED_IF_EXPANDED_HAS)
         return true
       else  
@@ -104,6 +91,31 @@ Wukong.processor(:mapper) do
       end
     end
     return matched
+  end
+  
+  def tweet_body_minus_urls(record)
+    body_minus_urls = record["body"]
+    url_entities_from(record).each do |url_entity|
+      body_minus_urls = body_minus_urls.gsub(url_entity["url"],"").gsub(url_entity["expanded_url"],"")  
+    end
+    return body_minus_urls      
+  end
+  
+  def contains_blacklisted_urls?(record)
+    result = false
+    url_entities_from(record).each do |url_entity|
+      if matches_blacklist?(normalize_url(url_entity["expanded_url"]))
+        result = true
+      end
+    end
+    return result
+  end
+  
+  def url_entities_from(record)
+    url_entities = []
+    url_entities += record.fetch("gnip", {}).fetch("urls", [])
+    url_entities += record.fetch("object",{}).fetch("twitter_entities", {}).fetch("urls", [])
+    return url_entities
   end
 
   def normalize_url(url)

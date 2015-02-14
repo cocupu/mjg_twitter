@@ -29,41 +29,46 @@ describe :mapper do
   it "should pass through the relevant fields" do
     # expected = {"url" => @record1["gnip"]["urls"].first["expanded_url"].downcase, "posted_time"=>@record1["postedTime"], "retweets"=>@record1["retweetCount"], "body"=>@record1["body"], "source_urls"=>@record1["gnip"]["urls"].first["url"]}
     expected = {"url"=>"https://web.archive.org/web/20070916144913/http://wp.netscape.com/newsref/pr/newsrelease67.html","posted_time"=>"2013-12-15T21:39:04.000Z","retweets"=>274,"body"=>"RT @samth: Today in 1995: \"NETSCAPE AND SUN ANNOUNCE JAVASCRIPT, THE OPEN, CROSS-PLATFORM OBJECT SCRIPTING LANGUAGE\" https://t.co/DPDngGu4UR","source_urls"=>"https://t.co/DPDngGu4UR"}
-    processor.given(records.first).should emit(expected.to_json)
+    expect(processor.given(records.first)).to emit(expected.to_json)
   end
   it "should strip utm_ values from urls" do
-    expected = {"url"=>"https://vidtok.com","posted_time"=>"2014-08-27T15:39:13.000Z","retweets"=>312,"body"=>"RT @vidtok: #HTML5 built, Sign up for a free trial of @vidtok live video chat. Use promo code \"TW2014\" for an extra 10% off. http://t.co/w7", "source_urls"=>"http://t.co/w7cjXaZewJ"}
-    processor.given(records[10]).should emit(expected.to_json)
+    expected = {"url"=>"https://blahblah.com","posted_time"=>"2014-08-27T15:39:13.000Z","retweets"=>312,"body"=>"RT @vidtok: #HTML5 built, Sign up for a free trial of @vidtok live video chat. Use promo code \"TW2014\" for an extra 10% off. http://t.co/w7", "source_urls"=>"http://t.co/w7cjXaZewJ"}
+    expect(processor.given(records[10])).to emit(expected.to_json)
   end
   it "should preserve case variation in urls" do
     expected = {"url"=>"http://haxiomic.github.io/GPU-Fluid-Experiments/html5","posted_time"=>"2014-11-18T21:39:04.000Z","retweets"=>876,"body"=>"Wow, this is neat - and beautiful http://t.co/ITcw3JKGqV Fluid dynamics simulator using HTML5 \u0026amp; WebGL, GPLv3 #freesoftware", "source_urls"=>"http://t.co/ITcw3JKGqV"}
-    processor.given(records[13]).should emit(expected.to_json)
+    expect(processor.given(records[13])).to emit(expected.to_json)
   end
   it "should keep the records we want" do
-    processor.given(records.first).should emit(1).records
-    processor.given(records[1]).should emit(1).records
-    processor.given(records[5]).should emit(1).records
-    processor.given(records[6]).should emit(1).records
+    expect(processor.given(records.first)).to emit(1).records
+    expect(processor.given(records[1])).to emit(1).records
+    expect(processor.given(records[5])).to emit(1).records
+    expect(processor.given(records[6])).to emit(1).records
+    expect(processor.given(records[15])).to emit(1).records
   end
   it "should filter out false matches on css, svg, etc." do
-    processor.given(records[2]).should emit(0).records
-    processor.given(records[3]).should emit(0).records
-    processor.given(records[4]).should emit(0).records
-    processor.given(records[7]).should emit(0).records
-    processor.given(records[8]).should emit(0).records
+    expect(processor.given(records[2])).to emit(0).records
+    expect(processor.given(records[3])).to emit(0).records
+    expect(processor.given(records[4])).to emit(0).records
+    expect(processor.given(records[7])).to emit(0).records
+    expect(processor.given(records[8])).to emit(0).records
   end
   it "should reject non-english tweets" do
-    processor.given(records[9]).should emit(0).records
+    expect(processor.given(records[9])).to emit(0).records
   end
   it "should filter per-url when record has multiple urls" do
     # Should not emit the url "http://twitter.com/8Grids/status/501170066730520576/photo/1", but should emit the url "http://8grids.com/portfolio/peak-wordpress-theme"
     expected = {"url"=>"http://wp.netscape.com/newsref/pr/newsrelease67.html","posted_time"=>nil,"retweets"=>274,"body"=>"This tweet has two urls but only one is good!  #HTML5 #CSS3 http://t.co/30yTwXoz","source_urls"=>"http://t.co/R3akWujGaB"}
     puts records[11]
-    processor.given(records[11]).should emit(expected.to_json)
+    expect(processor.given(records[11])).to emit(expected.to_json)
   end
   it "filters out urls that match the blacklisted patterns" do
-    processor.given(records[12]).should emit(0).records
+    expect(processor.given(records[12])).to emit(0).records
   end
+  it "filters out urls that have been specifically blacklisted" do
+    expect(processor.given(records[14])).to emit(0).records
+  end
+  
 end
 
 describe :reducer do
