@@ -35,8 +35,8 @@ class ReportPublisher
         puts "Bad line: "+ line
       end
     end
-    converted_data = Cocupu::Model.load(bindery_opts[:model_id]).convert_data_keys(urls)
-    Cocupu::Node.import({'identity'=>bindery_opts[:identity], 'pool'=>bindery_opts[:pool], "model_id"=>bindery_opts[:model_id], "data"=>converted_data})
+    # converted_data = Cocupu::Model.load(bindery_opts[:model_id]).convert_data_keys(urls)
+    Cocupu::Node.import({'pool_id'=>bindery_opts[:pool_id], "model_id"=>bindery_opts[:model_id], "data"=>urls})
   end
 
   def publish_to
@@ -50,7 +50,7 @@ class ReportPublisher
   end
 
   def bindery_opts
-    @bindery_opts ||= {:email => config["email"], :password => config["password"], :identity => config["identity"],:pool => config["pool"], :model_id => config["model_id"], :port => config["port"], :host => config["host"]}
+    @bindery_opts ||= {:email => config["email"], :password => config["password"], :identity => config["identity"],:pool_id => config["pool_id"], :model_id => config["model_id"], :port => config["port"], :host => config["host"]}
   end
 
   # Replaces newlines with commas.  Wraps the entire file's contents with square brackets.

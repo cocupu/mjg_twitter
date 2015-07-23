@@ -1,7 +1,7 @@
 GIT
   remote: git://github.com/cocupu/databindery-client.git
-  revision: c03ce406659291abf35e9137e5d6c19580ce2c6b
-  ref: c03ce406659291abf35e9137e5d6c19580ce2c6b
+  revision: 4a8555b9965a796fb192e57725c84bfd375d52c1
+  ref: 4a8555b
   specs:
     cocupu (0.0.2)
       activesupport (>= 3.0)
@@ -24,11 +24,11 @@ GIT
 GEM
   remote: http://rubygems.org/
   specs:
-    activesupport (4.1.8)
-      i18n (~> 0.6, >= 0.6.9)
+    activesupport (4.2.3)
+      i18n (~> 0.7)
       json (~> 1.7, >= 1.7.7)
       minitest (~> 5.1)
-      thread_safe (~> 0.1)
+      thread_safe (~> 0.3, >= 0.3.4)
       tzinfo (~> 1.1)
     columnize (0.8.9)
     configliere (0.4.18)
@@ -50,14 +50,14 @@ GEM
     httmultiparty (0.3.8)
       httparty (>= 0.7.3)
       multipart-post
-    httparty (0.13.3)
+    httparty (0.13.5)
       json (~> 1.8)
       multi_xml (>= 0.5.2)
-    i18n (0.6.11)
+    i18n (0.7.0)
     json (1.8.1)
     log4r (1.1.10)
     mime-types (1.25.1)
-    minitest (5.4.3)
+    minitest (5.7.0)
     multi_json (1.10.1)
     multi_xml (0.5.5)
     multipart-post (2.0.0)
@@ -79,7 +79,7 @@ GEM
     rspec-mocks (3.0.2)
       rspec-support (~> 3.0.0)
     rspec-support (3.0.2)
-    thread_safe (0.3.4)
+    thread_safe (0.3.5)
     tzinfo (1.2.2)
       thread_safe (~> 0.1)
     uuidtools (2.1.4)

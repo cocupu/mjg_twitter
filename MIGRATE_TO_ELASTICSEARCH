@@ -1,0 +1,31 @@
+  $ ./script/url_analyzer --publish --start 20131106 --end 20131115
+
+To rebuild the MNJ URL model 
+
+```
+mjg = Identity.find_by_short_name('frontendmasters')
+# pool = Pool.create(owner:mjg, short_name:'trending_urls', name:'Trending URLs')
+pool = mjg.pools.find_by_short_name('trending_urls')
+```
+
+```ruby
+fields_attributes = [{name:"URL"},{name:"Count", type:"IntegerField"},{name:"Retweets", type:"IntegerField"},{name:"Total Tweets", type:"IntegerField"},{name:"Text", type:"TextArea"},{name:"Source URLs", type:"TextArea"},{name:"Date", type:"DateField"},{name:"Posted At", type:"DateField"}]
+
+m = Model.create(pool: pool, owner: pool.owner, name:"URL", fields_attributes: fields_attributes,label_field_id: "url")
+
+Re-analyze (applies blacklist) and publish URLs for a single day
+```
+./script/url_analyzer --extract --publish --start 20140823 --end 20140824
+```
+
+Import URLs for a single day
+```
+./script/url_analyzer --publish --start 20140823 --end 20140824
+```
+
+Import everything:
+
+```
+./script/url_analyzer --publish --start 20140823 --end 20150802
+
+```
