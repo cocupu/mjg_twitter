@@ -1,0 +1,39 @@
+# ElasticSearch
+
+curl -H "Content-Type: application/json" http://localhost:9200/3/_search 
+
+# DataBindery
+
+curl -X POST -H "Content-Type: application/json" -u marc@mjg.in:zWurXuPSY1o http://localhost:3000/api/v1/pools/3/_search.json -d
+
+
+
+{"body":
+{
+    "query" : {
+        "filtered" : { 
+            "query" : { 
+              "match": { "date": "2014-08-23" }
+            },
+            "filter" : {
+                "range" : { 
+                    "posted_time": {
+                                "gt": "2014-08-23",
+                                "lt": "2014-08-24"
+                            }
+                }
+            }
+        }
+    }
+}
+}
+
+{"query" : {"filtered" : {"filter" : {"range" : {"posted_time" : {"gt" : "2014-08-23", "lt" : "2014-08-24"}}}}}}
+
+{"body": {"query": {"filtered": {"query":  { "match": { "date": "2014-08-23" }}}}}}
+
+{"body": {"query": {"filtered": {"filter":  { "match": { "date": "2014-08-23" }}}}}}
+
+{"body": {"query": { "match": { "date": "2014-08-23" }}}}
+
+curl -X POST -H "Content-Type: application/json" -u marc@mjg.in:zWurXuPSY1o http://localhost:3000/api/v1/pools/3/_search.json -d

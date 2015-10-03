@@ -1,6 +1,6 @@
 require 'fileutils'
 require 'date'
-class ExtractionRunner
+class ExtractionRunner < BaseRunner
   
   attr_writer :source_dir_path
   attr_accessor :message, :process_log, :invert_filters
@@ -15,7 +15,7 @@ class ExtractionRunner
   
   def process()
     puts "Running extractor against the data in #{source_dir_path}"
-    extractor_path = File.join(File.dirname(__FILE__),"twitter_url_extractor.rb")
+    extractor_path = File.join(File.dirname(__FILE__),"..", "twitter_url_extractor.rb")
     original_working_dir = Dir.pwd
     FileUtils::mkdir_p output_directory
     dates_to_process.each do |date|
@@ -33,9 +33,10 @@ class ExtractionRunner
     puts message
   end
 
+  # IMPORTANT: uses sort_command `wu-local sort --on="url"`.  This ensures that the output from the mapper gets sorted properly.
   def extractor_flags
     additional_options = invert_filters? ? "--invert_filters --include_debug_info" : "--include_debug_info"
-    "--mode=local --from=json #{additional_options}"
+    '--mode=local --from=json --sort_command=\'wu-local sort --on="url"\'' + additional_options
   end
   
   def expression_for_files_to_process(date)
@@ -62,10 +63,6 @@ class ExtractionRunner
     else
       output_directory+"/#{date.strftime("%Y_%m_%d")}-linkReport.json"
     end
-  end
-
-  def output_directory
-    @output_directory ||= Dir.pwd+"/output"
   end
 
   def processed_reports

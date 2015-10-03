@@ -1,0 +1,35 @@
+cat | map | sort | reduce
+
+# cat input GNIP data
+cat data/20150212/2015_02_12/*.json
+
+# map
+bundle exec wu-local lib/twitter_url_extractor.rb --from=json --run=mapper
+
+# sort
+bundle exec wu-local sort --on="url"
+
+# reduce 
+bundle exec wu-local lib/twitter_url_extractor.rb --from=json  --include_debug_info --run=reducer  
+
+# sort by weighted count
+wu-local sort --on=weighted_count --numeric --reverse 
+
+
+# cat results into dataset
+cat trending_urls.json
+
+# reduce dataset
+
+bundle exec wu-local sort --on="url" | bundle exec wu-local lib/url_dataset_reducer.rb --from=json --run=reducer
+
+# sort for readability
+wu-local sort --on=cumulative_total_tweets --numeric --reverse
+
+
+# DATAFLOWS
+
+# EXAMPLE USING DATAFLOWS
+# Process a day's data, mapping & reducing tweets to urls. Then concatenate that with the existing trending_urls.json dataset and reduce the concatenated data to produce a cumulative url history
+cat data/20150212/2015_02_12/*.json | wu-local map_and_reduce_tweets_to_urls | cat trending_urls.json | wu-local reduce_to_cumulative_url_history 
+

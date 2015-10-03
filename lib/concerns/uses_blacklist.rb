@@ -18,7 +18,7 @@ module UsesBlacklist
       blacklist_regexp.each do |expr|
         if expr.match(content)
           matches = true
-          puts "#{content} matched #{expr.inspect}"
+          # logger.debug "#{content} matched #{expr.inspect}"
           break
         end
       end

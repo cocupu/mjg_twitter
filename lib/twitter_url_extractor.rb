@@ -1,7 +1,8 @@
 require 'json'
 require 'uri'
 require 'cgi'
-require File.dirname(__FILE__)+'/concerns/uses_blacklist'
+# require File.dirname(__FILE__)+'/concerns/uses_blacklist'
+require './lib/concerns/uses_blacklist'
 # Returns a report on how many times each URL has been tweeted.
 # Yields JSON containing key, count, retweets and total tweets.  Example:
 #   {"key":"http://nyti.ms/1eaCmuG","count":1,"retweets":95,"total_tweets":96}
@@ -24,7 +25,7 @@ Wukong.processor(:mapper) do
         # This filters out things like links to images that were included in a tweet that has a valid URL
         filtered_entities = url_entities.select {|url_entity| validate_entity(url_entity) }
         if filtered_entities.empty?
-          puts "WARN: filtered all entities out of #{url_entities}.  It looked like good content, but all of the associated URLs failed filters."
+          # puts "WARN: filtered all entities out of #{url_entities}.  It looked like good content, but all of the associated URLs failed filters."
         end
         url_entities = filtered_entities   
       end
@@ -160,7 +161,7 @@ Wukong.processor(:reducer, Wukong::Processor::Accumulator) do
     unless self.text.include? record["body"]
       self.text << record["body"] #unless self.text.include? record["body"]
     end
-    unless self.source_urls.inlcude? record["source_urls"]
+    unless self.source_urls.include? record["source_urls"]
       self.source_urls << record["source_urls"] #unless self.source_urls.inlcude? record["source_urls"]
     end
   end
