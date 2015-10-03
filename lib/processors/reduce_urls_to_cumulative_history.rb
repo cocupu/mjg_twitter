@@ -1,13 +1,6 @@
 require 'json'
 
-Wukong.processor(:mapper) do
-  def process record
-    yield record.to_json
-  end
-end
-
-
-Wukong.processor(:reducer, Wukong::Processor::Accumulator) do
+Wukong.processor(:reduce_urls_to_cumulative_history, Wukong::Processor::Accumulator) do
   
   attr_accessor :has_updates, :last_posted_time, :last_total_tweets, :last_count, :last_retweets, :last_weighted_count, :cumulative_total_tweets, :text, :source_urls, :appeared_on
   
@@ -26,7 +19,7 @@ Wukong.processor(:reducer, Wukong::Processor::Accumulator) do
   end
   
   def accumulate record
-    self.source_urls += record["source_urls"] if record["source_urls"]
+    self.source_urls += Array(record["source_urls"]) if record["source_urls"]
     if record["posted_time"]
       self.has_updates = true
       self.cumulative_total_tweets += record["total_tweets"]
