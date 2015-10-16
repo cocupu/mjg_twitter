@@ -30,13 +30,22 @@ class ReportPublisher
     urls = []
     file.each_line do |line|
       begin
-        urls << JSON.parse(line)
+        json = JSON.parse(line)
       rescue => e
         puts "Bad line: "+ line
       end
+      if json
+        # If this is json output from a dat diff, grab the latest version/value
+        if json["forks"] && json["versions"]
+          url_json = json["versions"].last
+        else
+          url_json = json
+        end
+        urls << url_json 
+      end
     end
     # converted_data = Cocupu::Model.load(bindery_opts[:model_id]).convert_data_keys(urls)
-    Cocupu::Node.import({'pool_id'=>bindery_opts[:pool_id], "model_id"=>bindery_opts[:model_id], "data"=>urls})
+    Cocupu::Node.import({'pool_id'=>bindery_opts[:pool_id], "model_id"=>bindery_opts[:model_id], "data"=>urls, "key"=>"url"})
   end
 
   def publish_to

@@ -1,8 +1,10 @@
 #!/usr/bin/env ruby
 require 'rubygems'
+require 'wukong'
 require 'bundler/setup'
 require 'optparse'
-require './lib/mjg_twitter_tools'
+$LOAD_PATH.unshift(File.expand_path('../lib', File.dirname(__FILE__)))
+require 'mjg_twitter_tools'
 # require File.dirname(__FILE__)+'/../lib/mjg_twitter_tools'
 
 options = {}
@@ -17,9 +19,14 @@ parser = OptionParser.new do|opts|
   opts.on('-e', '--end end_date', 'Last date to generate URL reports for') do |end_date|
     options[:end_date] = end_date
   end
+  opts.on('--dat-ancestor-depth N', Integer, 'How many commits back to go in dat history when publish changes (defaults to 1)') do |ancestor_depth|
+    options[:dat_ancestor_depth] = ancestor_depth
+  end
   opts.on('-f','--full', 'Perform a full run: download, extract and publish') do
     options[:download] = true
     options[:extract] = true
+    options[:reduce] = true
+    options[:dat] = true
     options[:publish] = true
   end
   opts.on('-d','--download', 'Download new source data from GNIP') do
@@ -27,6 +34,16 @@ parser = OptionParser.new do|opts|
   end
   opts.on('-x', '--extract', 'Generate new URL reports from the data') do
     options[:extract] = true
+  end
+  opts.on('--reduce', 'Merge the results with existing dataset and reduce it to a consolidated dataset') do
+    options[:reduce] = true
+  end
+  opts.on('--dat', 'Commit the data to the dat dataset stored in ./dat_repo') do
+    options[:dat] = true
+  end
+  opts.on('--analysis-only', 'Only perform analysis tasks: Extract and Reduce') do
+    options[:extract] = true
+    options[:reduce] = true
   end
   opts.on('-p','--publish', 'Publish Reports to DataBindery') do
     options[:publish] = true
@@ -46,11 +63,28 @@ gnip_report_date = options[:gnip_report_date] ? options[:gnip_report_date] : "20
 start_date = options[:start_date] ? options[:start_date] : (Date.today-1).strftime("%Y%m%d")
 end_date = options[:end_date] ? options[:end_date] : start_date
 data_directory = options[:data_directory] ? options[:data_directory] : start_date
+dat_ancestor_depth = options[:dat_ancestor_depth] ? options[:dat_ancestor_depth] : 1
 
 # start_date = (DateTime.now-1.0/24.0).strftime("%Y%m%d%H%M")
 # end_date = DateTime.now.strftime("%Y%m%d%H%M")
 
 downloader = Gnip::SearchResultsDownloader.new(start_date:start_date,end_date:end_date,data_directory:data_directory)
+
+# Creates a json file containing all rows that have changed since the commit at +ancestor_depth+ 
+# Returns the path to that file
+def temporary_diff_file(ancestor_depth = 1)  
+  log_depth = (ancestor_depth + 1) * 3 - 1 
+  tmp_path = File.expand_path('tmp/diff.json')
+  FileUtils::mkdir_p File.dirname(tmp_path)
+  Dir.chdir("dat_repo")
+  dat_log = %x(dat log)
+  # grab the commit hash from the log, which lists commits in chronological order
+  # NOTE: This is prone to break with changes in the dat CLI api
+  commit_hash = dat_log.split(/\r?\n|\r/)[-log_depth].split(" ")[1]  
+  %x(dat diff -d urls --json #{commit_hash} > #{tmp_path})
+  Dir.chdir("..") 
+  tmp_path
+end
 
 if options[:download]
   downloader.download_latest_results
@@ -62,12 +96,34 @@ if options[:extract]
   puts extractor.message
 end
 
+reducer = UrlDatasetReducerRunner.new(source_dir_path:downloader.output_dir_path, start_date:start_date, end_date:end_date)
+if options[:reduce]
+  reducer.process
+  puts reducer.message
+end
+
+if options[:dat]
+  dataset_path = File.expand_path(reducer.processed_reports)
+  # Dir.chdir("dat_repo")
+  # %x(dat import -d urls -k url #{dataset_path} -m"data for #{start_date} through #{end_date}")
+  # Dir.chdir("..")
+  repository = Dat::Repository.new(dir: 'dat_repo')
+  repository.import(dataset: 'urls', key: 'urls', file: dataset_path, message: "data for #{start_date} through #{end_date}")
+end
+
+# if options[:publish]
+#   publisher = ReportPublisher.new()
+#   # paths_to_reports = extractor.processed_reports
+#   # paths_to_reports = reducer.processed_reports
+#   paths_to_reports = [temporary_diff_file(dat_ancestor_depth)]
+#   publisher.publish_reports(paths_to_reports)
+#   puts "\n\n\n\n"
+#   puts publisher.message
+# end
+
 if options[:publish]
-  publisher = ReportPublisher.new()
-  paths_to_reports = options[:extract] ? extractor.processed_reports : extractor.dates_to_process.map {|d| extractor.destination_file_path_for(d)}
-  publisher.publish_reports(paths_to_reports)
-  puts "\n\n\n\n"
-  puts publisher.message
+  repository = Dat::Repository.new(dir: 'dat_repo')
+  repository.push(remote: 'ssh://frontendmasters@api.databindery.com:trending_urls')
 end
 
 if options[:rejects]

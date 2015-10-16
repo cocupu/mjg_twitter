@@ -9,13 +9,20 @@ pool = mjg.pools.find_by_short_name('trending_urls')
 ```
 
 ```ruby
-fields_attributes = [{name:"URL"},{name:"Count", type:"IntegerField"},{name:"Retweets", type:"IntegerField"},{name:"Total Tweets", type:"IntegerField"},{name:"Text", type:"TextArea"},{name:"Source URLs", type:"TextArea"},{name:"Date", type:"DateField"},{name:"Posted At", type:"DateField"}]
+fields_attributes = [{name:"URL"},{name:"Text", type:"TextArea"},{name:"Source URLs", type:"TextArea"},{code:"appeared_on", type:"ArrayField"}, {code:"first_appearance", type:"DateField"}, {code:"last_posted_time", type:"DateField"}, {code:"last_total_tweets", type:"IntegerField"}, {code:"cumulative_total_tweets", type:"IntegerField"}, {code:"consecutive_days", type:"IntegerField"}, {code:"trend_direction", type:"IntegerField"}, {code:"last_count", type:"IntegerField"}, {code:"last_retweets", type:"IntegerField"}, {code:"last_weighted_count", type:"IntegerField"}]
+
 
 m = Model.create(pool: pool, owner: pool.owner, name:"URL", fields_attributes: fields_attributes,label_field_id: "url")
+m.save
+
+model = pool.models.find_by_name("URL")
+model.fields_attributes = new_fields_attributes
+model.save
 
 Re-analyze (applies blacklist) and publish URLs for a single day
+Note: to re-analyze existing data, you have to do one day at a time because data for each day is stored within a directory for the day on which it was _downloaded_, so the data for 20141001 is in data/20141001/2014_10_01 and the data for the next day is in data/20141002/2014_10_02.  The extractor isn't smart enough to understand that.  It assumes that it's only processing data that were all downloaded on the same day.
 ```
-./script/url_analyzer --extract --publish --start 20140823 --end 20140824
+./script/url_analyzer --extract --publish --start 20141001 --end 20141001
 ```
 
 Import URLs for a single day
@@ -25,7 +32,11 @@ Import URLs for a single day
 
 Import everything:
 
+First date we have data for: 20140930
+up to today (ie. 20150802)
 ```
-./script/url_analyzer --publish --start 20140823 --end 20150802
+./script/url_analyzer --publish --start 20150701 --end 20150710
+
+./script/url_analyzer --publish --start 20150722 --end 20150802
 
 ```

@@ -15,13 +15,14 @@ class ExtractionRunner < BaseRunner
   
   def process()
     puts "Running extractor against the data in #{source_dir_path}"
-    extractor_path = File.join(File.dirname(__FILE__),"..", "twitter_url_extractor.rb")
+    extractor_path = File.join(File.dirname(__FILE__),"..", "dataflows", "map_and_reduce_tweets_to_urls.rb")
     original_working_dir = Dir.pwd
     FileUtils::mkdir_p output_directory
     dates_to_process.each do |date|
       destination_path = destination_file_path_for(date)
       puts "processing #{date.strftime("%Y_%m_%d")}"
-      %x(cat #{expression_for_files_to_process(date)} | bundle exec wu-hadoop #{extractor_path} #{extractor_flags} | wu-local sort --on=weighted_count --numeric --reverse > #{destination_path})
+      puts "cat #{expression_for_files_to_process(date)} | bundle exec wu-local #{extractor_path} #{extractor_flags} | wu-local sort --on=weighted_count --numeric --reverse > #{destination_path}"
+      %x(cat #{expression_for_files_to_process(date)} | bundle exec wu-local #{extractor_path} #{extractor_flags} | wu-local sort --on=weighted_count --numeric --reverse > #{destination_path})
       #puts "[SKIPPED] processing #{expression_for_files_to_process(date)} to #{destination_path}"
       process_log[:success] << {destination_file_path:destination_path}
     end
@@ -36,25 +37,13 @@ class ExtractionRunner < BaseRunner
   # IMPORTANT: uses sort_command `wu-local sort --on="url"`.  This ensures that the output from the mapper gets sorted properly.
   def extractor_flags
     additional_options = invert_filters? ? "--invert_filters --include_debug_info" : "--include_debug_info"
-    '--mode=local --from=json --sort_command=\'wu-local sort --on="url"\'' + additional_options
+    additional_options
   end
   
   def expression_for_files_to_process(date)
     #source_dir_path+"/20131215-20140115_f3a6rxbkax_#{date.strftime("%Y_%m_%d")}*.json"
     # source_dir_path+"/*.json"
     source_dir_path+"/#{date.strftime("%Y_%m_%d")}/*.json"
-  end
-  
-  def dates_to_process
-    start_date.upto(end_date)
-  end
-  
-  def start_date
-    @start_date ||= DateTime.strptime(today_string, "%Y%m%d")
-  end
-  
-  def end_date
-    @end_date ||= DateTime.strptime(today_string, "%Y%m%d") 
   end
   
   def destination_file_path_for(date)
@@ -66,15 +55,15 @@ class ExtractionRunner < BaseRunner
   end
 
   def processed_reports
-    process_log[:success].map{|l| l[:destination_file_path] }
+    if process_log[:success].empty?
+      dates_to_process.map {|d| destination_file_path_for(d)}
+    else
+      process_log[:success].map{|l| l[:destination_file_path] }
+    end
   end
 
   def source_dir_path
     @source_dir_path ||= "data/#{today_string}"
-  end
-    
-  def today_string
-    @today_string ||= Time.now.strftime("%Y%m%d")
   end
 
   def invert_filters?
