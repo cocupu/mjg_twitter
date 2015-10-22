@@ -1,18 +1,11 @@
 GIT
   remote: git://github.com/cocupu/databindery-client.git
-  revision: 57fd96dce017d057af764aa84c002fd9439acc55
-  ref: 57fd96d
+  revision: 1ad16077bc957e6319a079fc05d8f1e5bd295590
+  ref: 1ad1607
   specs:
     cocupu (0.0.2)
       activesupport (>= 3.0)
       httmultiparty (= 0.3.8)
-
-GIT
-  remote: git://github.com/databindery/dat-ruby.git
-  revision: 8fa7416c3ed5391f83343a529f9916ec708e2d73
-  specs:
-    dat (0.1.0)
-      activesupport (>= 3.0)
 
 GEM
   remote: http://rubygems.org/
@@ -93,7 +86,6 @@ PLATFORMS
 
 DEPENDENCIES
   cocupu!
-  dat!
   debugger
   rake
   rest-client (~> 1.6.7)

@@ -8,7 +8,7 @@ gem 'rspec', '~> 3.0.0'
 gem 'rake'
 gem 'debugger', group: [:development, :test] # using ruby < 2.0.0 so use debugger instead of byebug
 # gem 'cocupu', path: '../databindery-client'
-gem 'cocupu', github: 'cocupu/databindery-client', ref:"57fd96d"
-gem 'dat', github: 'databindery/dat-ruby'
+gem 'cocupu', github: 'cocupu/databindery-client', ref:"1ad1607"
+# gem 'dat', github: 'databindery/dat-ruby'
 gem "rest-client", "~> 1.6.7"
 gem "yajl-ruby", "~> 1.1.0"

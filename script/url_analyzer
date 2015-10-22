@@ -70,22 +70,6 @@ dat_ancestor_depth = options[:dat_ancestor_depth] ? options[:dat_ancestor_depth]
 
 downloader = Gnip::SearchResultsDownloader.new(start_date:start_date,end_date:end_date,data_directory:data_directory)
 
-# Creates a json file containing all rows that have changed since the commit at +ancestor_depth+ 
-# Returns the path to that file
-def temporary_diff_file(ancestor_depth = 1)  
-  log_depth = (ancestor_depth + 1) * 3 - 1 
-  tmp_path = File.expand_path('tmp/diff.json')
-  FileUtils::mkdir_p File.dirname(tmp_path)
-  Dir.chdir("dat_repo")
-  dat_log = %x(dat log)
-  # grab the commit hash from the log, which lists commits in chronological order
-  # NOTE: This is prone to break with changes in the dat CLI api
-  commit_hash = dat_log.split(/\r?\n|\r/)[-log_depth].split(" ")[1]  
-  %x(dat diff -d urls --json #{commit_hash} > #{tmp_path})
-  Dir.chdir("..") 
-  tmp_path
-end
-
 if options[:download]
   downloader.download_latest_results
 end
@@ -102,28 +86,15 @@ if options[:reduce]
   puts reducer.message
 end
 
+dat_repository = Dat::Repository.new(dir: 'dat_repo')
+
 if options[:dat]
   dataset_path = File.expand_path(reducer.processed_reports)
-  # Dir.chdir("dat_repo")
-  # %x(dat import -d urls -k url #{dataset_path} -m"data for #{start_date} through #{end_date}")
-  # Dir.chdir("..")
-  repository = Dat::Repository.new(dir: 'dat_repo')
-  repository.import(dataset: 'urls', key: 'urls', file: dataset_path, message: "data for #{start_date} through #{end_date}")
+  dat_repository.import(dataset: 'urls', key: 'urls', file: dataset_path, message: "data for #{start_date} through #{end_date}")
 end
 
-# if options[:publish]
-#   publisher = ReportPublisher.new()
-#   # paths_to_reports = extractor.processed_reports
-#   # paths_to_reports = reducer.processed_reports
-#   paths_to_reports = [temporary_diff_file(dat_ancestor_depth)]
-#   publisher.publish_reports(paths_to_reports)
-#   puts "\n\n\n\n"
-#   puts publisher.message
-# end
-
 if options[:publish]
-  repository = Dat::Repository.new(dir: 'dat_repo')
-  repository.push(remote: 'ssh://frontendmasters@api.databindery.com:trending_urls')
+  ReportPublisher.publish_from_dat(dat_repository)
 end
 
 if options[:rejects]

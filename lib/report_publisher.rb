@@ -7,73 +7,24 @@ class ReportPublisher
   attr_writer :publish_to
   attr_accessor :message
 
-  # @example
-  #   paths_to_reports = ["/tmp/reports/foo1.json", "/tmp/reports/foo2.json"]
-  #   bindery_opts = {email:"archivist@example.com", identity:"my_identity", pool:"the_pool", model_id:45}
-  #   publish_report_to_databindery(paths_to_reports, bindery_opts)
-  def publish_reports(paths_to_reports)
+  def self.publish_from_dat(dat)
     port = bindery_opts[:port] ? bindery_opts[:port] : 80
     Cocupu.start(bindery_opts[:email], bindery_opts[:password], port, bindery_opts[:host])
-    paths_to_reports.each do |path_to_report|
-      puts "Publishing #{path_to_report} to DataBindery"
-      publish_report_to_databindery(path_to_report, bindery_opts)
-      #convert_ndj_to_json(path_to_report)
-    end
-    FileUtils.cp paths_to_reports, publish_to
-    message = "Published #{paths_to_reports.length} reports to #{publish_to} and #{bindery_opts[:identity]}/#{bindery_opts[:pool]} on DataBindery"
+    dat.push(remote: bindery_opts[:dat])
+    # This assumes that the pool is configured to read from the dat at bindery_opts[:dat]
+    Cocupu::PoolIndex.update(pool_id: bindery_opts[:pool_id], index_name: 'live')
+    message = "Published data to http://#{bindery_opts[:host]}:#{bindery_opts[:port]}/api/v1/pools/#{bindery_opts[:pool]}"
   end
 
-  # @example
-  #   publish_report_to_databindery("/tmp/reports/foo.json", email:"archivist@example.com", identity:"my_identity", pool:"the_pool", model_id:45)
-  def publish_report_to_databindery(path_to_report, bindery_opts)
-    file = File.open(path_to_report)
-    urls = []
-    file.each_line do |line|
-      begin
-        json = JSON.parse(line)
-      rescue => e
-        puts "Bad line: "+ line
-      end
-      if json
-        # If this is json output from a dat diff, grab the latest version/value
-        if json["forks"] && json["versions"]
-          url_json = json["versions"].last
-        else
-          url_json = json
-        end
-        urls << url_json 
-      end
-    end
-    # converted_data = Cocupu::Model.load(bindery_opts[:model_id]).convert_data_keys(urls)
-    Cocupu::Node.import({'pool_id'=>bindery_opts[:pool_id], "model_id"=>bindery_opts[:model_id], "data"=>urls, "key"=>"url"})
+  def self.bindery_opts
+    @bindery_opts ||= {:email => config["email"], :password => config["password"], :identity => config["identity"], :pool_id => config["pool_id"], :model_id => config["model_id"], :dat => config["dat"], :port => config["port"], :host => config["host"]}
   end
 
-  def publish_to
-    @publish_to ||= "/opt/cocupu/public/mjg_twitter"
-    begin
-      FileUtils::mkdir_p @publish_to
-    rescue
-      @publish_to = "./output/reports"
-      FileUtils::mkdir_p @publish_to
-    end
-  end
-
-  def bindery_opts
-    @bindery_opts ||= {:email => config["email"], :password => config["password"], :identity => config["identity"],:pool_id => config["pool_id"], :model_id => config["model_id"], :port => config["port"], :host => config["host"]}
-  end
-
-  # Replaces newlines with commas.  Wraps the entire file's contents with square brackets.
-  def convert_ndj_to_json(path_to_report)
-    tmp_path =  path_to_report+".tmp"
-    %x(printf '%s' "[" |cat - #{path_to_report} | tr '\n' ',' | sed '$s/,$/]/' > #{tmp_path})
-    %x(mv #{tmp_path} #{path_to_report})
-  end
-
-  def config
+  def self.config
     @config ||= load_config
   end
 
-  def load_config
+  def self.load_config
     environment = ENV['environment'].nil? ? "development" : ENV['environment']
     bindery_yml_path = File.dirname(__FILE__)+'/../config/databindery.yml'
     bindery_yml = YAML.load(File.read(bindery_yml_path))
