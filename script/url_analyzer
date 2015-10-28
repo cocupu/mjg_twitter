@@ -51,6 +51,9 @@ parser = OptionParser.new do|opts|
   opts.on('-r','--rejects', 'Generate Reports of Rejected URLs') do
     options[:rejects] = true
   end
+  opts.on('--no-dat', 'Don\'t read/write data to or from the local dat repository when running the dataset reducer.') do
+    options[:using_dat] = false
+  end
 end
 parser.parse!
 
@@ -64,6 +67,7 @@ start_date = options[:start_date] ? options[:start_date] : (Date.today-1).strfti
 end_date = options[:end_date] ? options[:end_date] : start_date
 data_directory = options[:data_directory] ? options[:data_directory] : start_date
 dat_ancestor_depth = options[:dat_ancestor_depth] ? options[:dat_ancestor_depth] : 1
+using_dat = options[:using_dat].nil? ? true : options[:using_dat]
 
 # start_date = (DateTime.now-1.0/24.0).strftime("%Y%m%d%H%M")
 # end_date = DateTime.now.strftime("%Y%m%d%H%M")
@@ -80,21 +84,17 @@ if options[:extract]
   puts extractor.message
 end
 
-reducer = UrlDatasetReducerRunner.new(source_dir_path:downloader.output_dir_path, start_date:start_date, end_date:end_date)
+dat_repository = Dat::Repository.new(dir: 'dat_repo') if using_dat
+
+reducer = UrlDatasetReducerRunner.new(source_dir_path:downloader.output_dir_path, start_date:start_date, end_date:end_date, dat_repository: dat_repository)
 if options[:reduce]
   reducer.process
   puts reducer.message
 end
 
-dat_repository = Dat::Repository.new(dir: 'dat_repo')
-
-if options[:dat]
-  dataset_path = File.expand_path(reducer.processed_reports)
-  dat_repository.import(dataset: 'urls', key: 'urls', file: dataset_path, message: "data for #{start_date} through #{end_date}")
-end
-
 if options[:publish]
-  ReportPublisher.publish_from_dat(dat_repository)
+  start_at_commit ||= nil
+  ReportPublisher.publish_from_dat(dat_repository, start_at: start_at_commit)
 end
 
 if options[:rejects]

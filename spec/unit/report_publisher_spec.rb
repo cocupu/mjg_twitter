@@ -15,8 +15,8 @@ describe ReportPublisher do
     end
     it 'publishes to bindery dat repo and then tells bindery pool to update its index' do
       expect(dat).to receive(:push).with(remote: 'ssh://path/to/dat')
-      expect(Cocupu::PoolIndex).to receive(:update).with('pool_id'=>22, index_name:'live')
-      described_class.publish_from_dat(dat)
+      expect(Cocupu::PoolIndex).to receive(:update).with(pool_id: 22, index_name:'live', source: { dat: { from: 'commitRef1', to: 'commitRef2' } })
+      described_class.publish_from_dat(dat, start_at:'commitRef1', stop_at:'commitRef2')
     end
   end
 

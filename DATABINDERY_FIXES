@@ -1,0 +1,7 @@
+curl -X GET -H "Content-Type: application/json" -u marc@mjg.in:zWurXuPSY1o http://localhost:3000/api/v1/pools/3/indices.json 
+
+curl -X POST -H "Content-Type: application/json" -u marc@mjg.in:zWurXuPSY1o http://localhost:3000/api/v1/pools/3/indices.json -d '{"alias":true, "write_models":false}' 
+
+
+
+curl -X PUT -H "Content-Type: application/json" -u marc@mjg.in:zWurXuPSY1o http://localhost:3000/api/v1/pools/3/indices/live.json -d '{"source":"dat"}' 

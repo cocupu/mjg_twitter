@@ -2,12 +2,13 @@ require 'fileutils'
 require 'date'
 class UrlDatasetReducerRunner < BaseRunner
   
-  attr_accessor :message, :dataset_path
+  attr_accessor :message, :dataset_path, :dat_repository
 
   def initialize(opts={})
     @start_date = opts[:start_date].kind_of?(DateTime) ? opts[:start_date] : DateTime.strptime(opts[:start_date], "%Y%m%d")
     @end_date = opts[:end_date].kind_of?(DateTime) ? opts[:end_date] : DateTime.strptime(opts[:end_date], "%Y%m%d")
     @original_dataset_path = opts[:dataset_path] if opts[:dataset_path]
+    @dat_repository = opts[:dat_repository]
   end
   
   # * concatenate new linkreport(s) with trending_urls.json dataset
@@ -15,6 +16,7 @@ class UrlDatasetReducerRunner < BaseRunner
   # * write the result to trending_urls-{date_string}.json
   def process
     FileUtils::mkdir_p output_directory
+    export_original_dataset_from_dat if dat_repository
     dates_to_process.sort.each do |date|
       destination_path = destination_file_path_for(date)
       puts "Combining data from #{expression_for_files_to_process(date)} with the dataset #{path_to_dataset} "
@@ -22,6 +24,7 @@ class UrlDatasetReducerRunner < BaseRunner
       # for each consecutive pass, the output from the previous run is used as the starting dataset
       @dataset_path = destination_path
     end
+    import_results_into_dat if dat_repository
     @message = "Finished merging data from #{dates_to_process.count} days with the data from #{original_dataset_path}.  The cumulative result is in #{dataset_path}"
   end
   
@@ -33,6 +36,17 @@ class UrlDatasetReducerRunner < BaseRunner
   end
   
   private
+  
+  def export_original_dataset_from_dat
+    File.delete(original_dataset_path) if File.exists?(original_dataset_path)
+    puts 'exporting original dataset from dat'
+    dat_repository.export(dataset:'urls', write_to:original_dataset_path)
+  end
+  
+  def import_results_into_dat
+    puts 'importing results into dat'
+    dat_repository.import(dataset: 'urls', key: 'url', file: dataset_path, message: "data for #{start_date.strftime('%F')} through #{end_date.strftime('%F')}")
+  end
   
   def path_to_dataset
     @dataset_path ||= original_dataset_path

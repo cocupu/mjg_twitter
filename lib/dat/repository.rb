@@ -42,6 +42,17 @@ module Dat
 
       run_command command
     end
+    
+    # @return [String] the output of the dat export
+    def export(options={})
+      dataset = options[:dataset]
+      write_to = options[:write_to]
+      if write_to
+        run_command "dat export -d #{dataset} > #{write_to}"
+      else
+        run_command "dat export -d #{dataset}"
+      end
+    end
 
     def replicate(options={})
       remote = options[:remote]

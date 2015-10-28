@@ -33,8 +33,8 @@ Wukong.processor(:reduce_urls_to_cumulative_history, Wukong::Processor::Accumula
       self.text = record["text"]
       self.last_weighted_count = last_count*10+last_retweets
     else
-      self.cumulative_total_tweets += record["cumulative_total_tweets"]
-      self.appeared_on += record["appeared_on"]
+      self.cumulative_total_tweets += record["cumulative_total_tweets"] if record["cumulative_total_tweets"]
+      self.appeared_on += record["appeared_on"] if record["appeared_on"]
       self.last_total_tweets = record["last_total_tweets"]
     end
   end

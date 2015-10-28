@@ -1,38 +1,14 @@
 # ElasticSearch
 
-curl -H "Content-Type: application/json" http://localhost:9200/8/_search 
+curl -H "Content-Type: application/json" http://localhost:9200/3/_search -d 
 
 # DataBindery
 
-curl -X POST -H "Content-Type: application/json" -u marc@mjg.in:zWurXuPSY1o http://localhost:3000/api/v1/pools/8/_search.json -d
+curl -X POST -H "Content-Type: application/json" -u marc@mjg.in:zWurXuPSY1o http://localhost:3000/api/v1/pools/3/_search.json -d
 
 -d'...' | python -mjson.tool
 
-# BASIC
-{"body":
-{
-    "fields" : ["id","appeared_on","last_posted_time","cumulative_total_tweets","consecutive_days","trend_direction" ],
-    "sort" : [
-            { "trend_direction" : {"order" : "desc"}},
-            { "cumulative_total_tweets" : {"order" : "desc"}}
-            ],
-    "query" : {
-        "filtered" : { 
-            "query" : { 
-              "match": { "appeared_on": "2015-10-01" }
-            },
-            "filter" : {
-                "range" : { 
-                    "last_posted_time": {
-                                "gt": "2015-10-01",
-                                "lt": "2015-10-02"
-                            }
-                }
-            }
-        }
-    }
-}' | python -mjson.tool
-}
+
 
 
 # SCORING
@@ -43,10 +19,7 @@ curl -X POST -H "Content-Type: application/json" -u marc@mjg.in:zWurXuPSY1o http
     "function_score": {        
         "query" : {
             "filtered" : { 
-                "filter" : { "range" : { "last_posted_time": {
-                                    "gt": "2015-10-14",
-                                    "lt": "2015-10-16"
-                                }}}
+                "query" : { "match": { "appeared_on": "2015-10-27" } }
             }
         },
         "functions" : [
@@ -63,6 +36,32 @@ curl -X POST -H "Content-Type: application/json" -u marc@mjg.in:zWurXuPSY1o http
 
 
 
+# BASIC
+{"body":
+{
+    "fields" : ["id","appeared_on","last_posted_time","cumulative_total_tweets","consecutive_days","trend_direction" ],
+    "sort" : [
+            { "trend_direction" : {"order" : "desc"}},
+            { "cumulative_total_tweets" : {"order" : "desc"}}
+            ],
+    "query" : {
+        "filtered" : { 
+            "query" : { 
+              "match": { "appeared_on": "2015-10-16" }
+            },
+            "filter" : {
+                "range" : { 
+                    "last_posted_time": {
+                                "gt": "2015-10-16",
+                                "lt": "2015-10-17"
+                            }
+                }
+            }
+        }
+    }
+}' | python -mjson.tool
+}
+
 
 
 
@@ -77,7 +76,7 @@ curl -X POST -H "Content-Type: application/json" -u marc@mjg.in:zWurXuPSY1o http
 
 {"body": {"query": {"filtered": {"query":  { "match": { "appeared_on": "2015-10-01" }}}}}}
 
-{"body": {"query": {"filtered": {"filter":  { "match": { "date": "2014-08-23" }}}}}}
+{"body": {"query": {"filtered": {"query":  { "match": { "appeared_on": "2015-10-01" }}}}} }
 
 {"body": {"query" : {"filtered" : {"filter" : {"range" : {"last_posted_time" : {"gt" : "2015-10-01", "lt" : "2015-10-02"}}}}}}}
 
