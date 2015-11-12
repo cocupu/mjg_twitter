@@ -44,6 +44,7 @@ Wukong.processor(:reduce_urls_to_cumulative_history, Wukong::Processor::Accumula
     if has_updates || accumulate_history
       json = {
         url: key, 
+        rank: RankingCalculator.rank(self),
         appeared_on: appeared_on.sort,
         first_appearance: appeared_on.sort.first,
         last_posted_time: last_posted_time, 
@@ -55,7 +56,8 @@ Wukong.processor(:reduce_urls_to_cumulative_history, Wukong::Processor::Accumula
         last_retweets: last_retweets,
         last_weighted_count: last_weighted_count,
         source_urls: source_urls,
-        text: text
+        text: text,
+        ranking_algorithm_version: RankingCalculator::VERSION
       }
       json[:recurrance] = true if recurrance
       yield JSON.generate(json)

@@ -13,5 +13,5 @@ require 'mjg_twitter_tools'
 # Note: The dataflow sorts the input json by url so that url entries will be grouped 
 # properly by the reducer. This allows you to cat together multiple datasets as input. 
 Wukong.dataflow(:reduce_to_cumulative_url_history) do
-  from_json | sort(on: "url") | reduce_urls_to_cumulative_history | sort(on: "cumulative_total_tweets", numeric: true, reverse: true, accumulate_history: true)
+  from_json | sort(on: "url") | reduce_urls_to_cumulative_history | sort(on: "rank", numeric: true, reverse: true, accumulate_history: true)
 end
